@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="11160806d11447a8b44b660c3c77cc65" Name="Diagram1">
+        <EntityTypeShape EntityType="StockControlModel.Contact" Width="1.5" PointX="1.2207589136533248" PointY="1.518421903959672" />
+        <EntityTypeShape EntityType="StockControlModel.DeliveryOrderDetail" Width="1.5" PointX="1.9974156124505287" PointY="19.58867005425909" />
+        <EntityTypeShape EntityType="StockControlModel.DeliveryOrder" Width="1.5" PointX="11.748932948219093" PointY="16.934309505361277" />
+        <EntityTypeShape EntityType="StockControlModel.Item" Width="1.5" PointX="6.0395455984582869" PointY="1.4044256514890239" />
+        <EntityTypeShape EntityType="StockControlModel.PurchaseOrderDetail" Width="1.5" PointX="6.7364726395981727" PointY="13.725171274377578" />
+        <EntityTypeShape EntityType="StockControlModel.PurchaseOrder" Width="1.5" PointX="4.41768560019214" PointY="15.900698132766737" />
+        <EntityTypeShape EntityType="StockControlModel.PurchaseReceivalDetail" Width="1.5" PointX="7.2055734280522783" PointY="12.522337159385131" />
+        <EntityTypeShape EntityType="StockControlModel.PurchaseReceival" Width="1.5" PointX="4.1944824588459371" PointY="12.142026102236484" />
+        <EntityTypeShape EntityType="StockControlModel.SalesOrderDetail" Width="1.5" PointX="10.910619466989591" PointY="24.230746921259325" />
+        <EntityTypeShape EntityType="StockControlModel.SalesOrder" Width="1.5" PointX="3.2153736516904896" PointY="7.5402557884996089" />
+        <EntityTypeShape EntityType="StockControlModel.StockMutation" Width="1.5" PointX="4.1605170537533782" PointY="20.743703196171534" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockControl", "StockControl\StockControl.csproj", "{04B8BE15-4142-459F-B1A4-CB0EB76A38CB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{04B8BE15-4142-459F-B1A4-CB0EB76A38CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04B8BE15-4142-459F-B1A4-CB0EB76A38CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04B8BE15-4142-459F-B1A4-CB0EB76A38CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04B8BE15-4142-459F-B1A4-CB0EB76A38CB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
