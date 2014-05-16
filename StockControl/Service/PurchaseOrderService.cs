@@ -88,6 +88,12 @@ namespace StockControl.Service
                 newPurchaseOrder.ContactId = purchaseOrder.ContactId;
                 // Code: #{year}/#{total_number_of_purchase_order}
                 // TODO:
+								
+								/*
+									total_number_purchase_order = purchaseOrderRepository.Count() + 1;   << something like this. 
+									challenge in crafting the LINQ sql = find the total number of purchase orders in the current year
+									
+								*/
                 newPurchaseOrder.Code = "#" + DateTime.Today.Year.ToString() + "/#" + "{total_number_purchase_order}";
                 newPurchaseOrder.PurchaseDate = purchaseOrder.PurchaseDate;
                 newPurchaseOrder.IsConfirmed = purchaseOrder.IsConfirmed;
@@ -151,6 +157,8 @@ namespace StockControl.Service
             try
             {
                 PurchaseOrder deletePurchaseOrder = _purchaseOrderRepository.Find(p => p.Id == purchaseOrderId && !p.IsDeleted);
+									
+								
                 if (deletePurchaseOrder != null)
                 {
                     string message = "";
@@ -307,6 +315,19 @@ namespace StockControl.Service
             respModel.objResult = null;
             try
             {
+	
+								/*
+									purchaseOrder variable come from the user. Dangerous.
+									
+									When we are about to do action on purchase order, it is better to get the verbatim data from db.
+									
+									Think about it in this way: all data from user are evil. They can type any value inside. 
+									
+									For example: they emulate purchaseOrder.Id to be 000 . In the database, there is no such value. You will have error. 
+									
+								
+									
+								*/
                 string message = "";
                 respModel.isValid = this.ValidateConfirmPurchaseOrder(purchaseOrder, _purchaseOrderRepository, out message);
                 if (!respModel.isValid)
@@ -318,6 +339,14 @@ namespace StockControl.Service
                 PurchaseOrder confirmPurchaseOrder = _purchaseOrderRepository.Find(p => p.Id == purchaseOrder.Id && !p.IsDeleted);
                 if (confirmPurchaseOrder != null)
                 {
+										/*
+											Just update the necessary field. 
+											
+											confirmPurchaseOrder.IsConfirmed = true; 
+											_purchaseOrderRepository.UpdatePurchaseOrder(confirmPurchaseOrder);
+											
+											done.. you don't need to assign value from other such as Id, ContactId. 
+										*/
                     confirmPurchaseOrder.Id = purchaseOrder.Id;
                     confirmPurchaseOrder.ContactId = purchaseOrder.ContactId;
                     confirmPurchaseOrder.Code = purchaseOrder.Code;
@@ -334,7 +363,11 @@ namespace StockControl.Service
 
                     // Confirm PurchaseOrder Detail
                     List<PurchaseOrderDetailModel> confirmPurchaseOrderDetails = _purchaseOrderRepository.GetPurchaseOrderDetailList(purchaseOrder.Id);
-
+										
+										/*
+											Double work. Based on the precondition you validated, 
+											there must be purchase order details in this given purchase order
+										*/
                     if (confirmPurchaseOrderDetails.Count() > 0)
                     {
                         foreach (var dod in confirmPurchaseOrderDetails)
@@ -575,12 +608,30 @@ namespace StockControl.Service
         {
             bool isValid = true;
             message = "";
+						/*
+							Kurang.
+							
+							if( current purchase order is confirmed, return false. Already confirmed).
+							
+							if( model.isConfirmed){
+								message = "Sudah di konfirmasi"
+								return false 
+							}
+							
+							rationale: current pending_receival stock == 5 
+							on confirming pending_receival stock, you will have added x 
+							
+							if you do double or triple confirm, you will have 5+ x  + x + x pending_receival 
+						*/
 
             if (_purchaseOrderRepository.GetPurchaseOrderDetailList(model.Id).Count() == 0)
             {
                 message = "There is no existing Purchase Order Detail...";
                 return false;
             }
+						
+						
+
             return isValid;
         }
 
@@ -1013,8 +1064,25 @@ namespace StockControl.Service
             String message = "";
             try
             {
+								/*
+									Error prone. Think about this.
+									
+									PurchaseOrder can be confirmed. If the PurchaseOrderDetails can't be confirmed, you will have
+										a. A confirmed PurchaseOrder
+										b. N Unconfirmed PurchaseOrderDetails whose PurchaseOrder is confirmed. error? 
+										
+									You should validate the byproducts first thing first. If the byproducts (PurcahseOrderDetail) can be validated, validate the original source (PurchaseOrder)
+								*/
                 respModel.isValid = this.ValidateConfirmPurchaseOrderDetail(purchaseOrderDetail, out message);
                 if (!respModel.isValid) { return respModel; }
+								/*
+									else{
+										1. get the purchaseOrderDetail
+										2. purchaseOrderDetail.IsConfirmed = true 
+										3. purchaseOrderDetailRepository.Update( purchaseOrderDetail ) 
+									
+									}
+								*/
 
                 respModel = this.UpdateConfirmationPurchaseOrderDetail(purchaseOrderDetail, true, _purchaseOrderRepository);
 
@@ -1026,6 +1094,11 @@ namespace StockControl.Service
                     return respModel;
                 }
 
+								/*
+									Why do you create a new purchase order detail?  
+									
+									it will produce error since Id is primary key. Must be unique. 
+								*/
                 PurchaseOrderDetail sod = new PurchaseOrderDetail();
                 sod.Id = purchaseOrderDetail.Id;
                 sod.PurchaseOrderId = purchaseOrderDetail.PurchaseOrderId;
@@ -1054,8 +1127,29 @@ namespace StockControl.Service
                 stockMutationPendingReceival.SourceDocumentId = purchaseOrderDetail.PurchaseOrderId;
                 stockMutationPendingReceival.SourceDocumentDetail = "PurchaseOrderDetail";
                 stockMutationPendingReceival.SourceDocumentDetailId = purchaseOrderDetail.Id;
+
+								/*
+									Use Constant. 
+									
+									create another class. 
+									
+									public class StockMutationConstant{
+										public static int PendingReceivalCase = 2;
+										public static int Ready = 0  ; 
+										public static int PendingDelivery = 1;  << something like this. 
+										
+										public static int AdditionMutationCase = 0;  << something like this. 
+										public static int DeductionMutationCase = 1; 
+									}
+									
+									Hence, when you are assigning value to the object, you can do it like this:
+									
+									stockMutationPendingReceival.ItemCase = StockMutationConstant.PendingReceivalCase ; 
+									stockMutationPendingReceival.MutationCase = StockMutationConstant.AdditionMutationCase ; // Addition
+								*/
                 stockMutationPendingReceival.ItemCase = 2; // Pending Receival
                 stockMutationPendingReceival.MutationCase = 1; // Addition
+
                 stockMutationPendingReceival.IsDeleted = false;
                 stockMutationPendingReceival.CreatedAt = DateTime.Now;
                 stockMutationPendingReceival.UpdatedAt = null;
@@ -1135,6 +1229,8 @@ namespace StockControl.Service
 
                 respModel = this.UpdateConfirmationPurchaseOrderDetail(purchaseOrderDetail, false, _purchaseOrderRepository);
 
+								
+								
                 PurchaseOrderDetail updatedPurchaseOrderDetail = new PurchaseOrderDetail();
                 updatedPurchaseOrderDetail.Id = purchaseOrderDetail.Id;
                 updatedPurchaseOrderDetail.PurchaseOrderId = purchaseOrderDetail.PurchaseOrderId;
@@ -1285,7 +1381,9 @@ namespace StockControl.Service
         /// <returns>true or false</returns>       
         public bool ValidateConfirmPurchaseOrderDetail(PurchaseOrderDetailModel purchaseOrderDetail, out string message)
         {
-            message = "";
+           
+
+						message = "";
             return true;
         }
 
