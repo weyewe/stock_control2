@@ -155,6 +155,10 @@ namespace StockControl.Service
                 if (deleteContact != null)
                 {
                     string message = "";
+
+										/*
+											Nice method! 
+										*/
                     ContactModel model = ContactModel.ToModel(deleteContact);
                     respModel.isValid = this.ValidateDelete(model, _po, _pr, _so, _do, out message);
                     if (!respModel.isValid)
