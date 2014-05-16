@@ -299,6 +299,18 @@ namespace StockControl.Service
                 message = "Invalid Name...";
                 return false;
             }
+
+						/*
+						better method naming and parameters: _itemRepositoy.isSkuDuplicated( model.sku )
+						why? natural to read. 
+						
+						usage: 
+							if( _itemRepository.isSkuDuplicated(model.sku) ){
+								message = "Duplicate Sku";
+								return false ; 
+							}
+						*/
+
             if(_itemRepository.GetDuplicateSku(model) != null)
             {
                 message = "Duplicate Sku " + model.Sku + "...";
