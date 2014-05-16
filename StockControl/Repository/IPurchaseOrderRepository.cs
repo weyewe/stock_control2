@@ -22,6 +22,7 @@ namespace StockControl.Repository
         void DeletePurchaseOrderDetail(int purchaseOrderDetailId);
         void DeletePurchaseOrderDetailByPurchaseOrderId(int purchaseOrderId);
         PurchaseOrderDetail UpdatePurchaseOrderDetail(PurchaseOrderDetail purchaseOrderDetail);
+        void UpdateConfirmationPurchaseOrderDetailByPurchaseOrderId(int purchaseOrderId, bool IsConfirmed);
 
     }
 }

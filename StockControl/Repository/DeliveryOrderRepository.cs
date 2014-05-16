@@ -10,27 +10,32 @@ namespace StockControl.Repository
     public class DeliveryOrderRepository : EfRepository<DeliveryOrder>, IDeliveryOrderRepository
     {
 
+        /*
+         * GET
+         */
+
         /// <summary>
         /// Get all delivery orders from Database.
         /// </summary>
         /// <returns>All delivery orders</returns>
         public List<DeliveryOrderModel> GetDeliveryOrderList()
         {
-             using (var db = GetContext())
+            using (var db = GetContext())
             {
                 IQueryable<DeliveryOrderModel> dom = (from d in db.DeliveryOrders
-                                               select new DeliveryOrderModel
-                                               {
-                                                   Id = d.Id,
-                                                   ContactId = d.ContactId,
-                                                   Code = d.Code,
-                                                   DeliveryDate = d.DeliveryDate,
-                                                   IsConfirmed = d.IsConfirmed,
-                                                   IsDeleted = d.IsDeleted,
-                                                   CreatedAt = d.CreatedAt,
-                                                   UpdatedAt = d.UpdatedAt,
-                                                   DeletedAt = d.DeletedAt
-                                               }).AsQueryable();
+                                                      where !d.IsDeleted
+                                                      select new DeliveryOrderModel
+                                                      {
+                                                          Id = d.Id,
+                                                          ContactId = d.ContactId,
+                                                          Code = d.Code,
+                                                          DeliveryDate = d.DeliveryDate,
+                                                          IsConfirmed = d.IsConfirmed,
+                                                          IsDeleted = d.IsDeleted,
+                                                          CreatedAt = d.CreatedAt,
+                                                          UpdatedAt = d.UpdatedAt,
+                                                          DeletedAt = d.DeletedAt
+                                                      }).AsQueryable();
 
                 return dom.ToList();
             }
@@ -46,23 +51,54 @@ namespace StockControl.Repository
             using (var db = GetContext())
             {
                 DeliveryOrderModel dom = (from d in db.DeliveryOrders
-                                                      where d.IsDeleted == false && d.Id == deliveryOrderId
-                                                      select new DeliveryOrderModel
-                                                      {
-                                                          Id = d.Id,
-                                                          ContactId = d.ContactId,
-                                                          Code = d.Code,
-                                                          DeliveryDate = d.DeliveryDate,
-                                                          IsConfirmed = d.IsConfirmed,
-                                                          IsDeleted = d.IsDeleted,
-                                                          CreatedAt = d.CreatedAt,
-                                                          UpdatedAt = d.UpdatedAt,
-                                                          DeletedAt = d.DeletedAt
-                                                      }).FirstOrDefault();
+                                          where !d.IsDeleted && d.Id == deliveryOrderId
+                                          select new DeliveryOrderModel
+                                          {
+                                              Id = d.Id,
+                                              ContactId = d.ContactId,
+                                              Code = d.Code,
+                                              DeliveryDate = d.DeliveryDate,
+                                              IsConfirmed = d.IsConfirmed,
+                                              IsDeleted = d.IsDeleted,
+                                              CreatedAt = d.CreatedAt,
+                                              UpdatedAt = d.UpdatedAt,
+                                              DeletedAt = d.DeletedAt
+                                          }).FirstOrDefault();
 
                 return dom;
             }
         }
+
+        /// Get delivery order from Database.
+        /// </summary>
+        /// <param name="contactId">Id of the contact</param>
+        /// <returns>The delivery order model</returns>
+        public List<DeliveryOrderModel> GetDeliveryOrderByContactId(int contactId)
+        {
+            using (var db = GetContext())
+            {
+                IQueryable<DeliveryOrderModel> dom = (from p in db.DeliveryOrders
+                                                      where !p.IsDeleted && p.ContactId == contactId
+                                                      select new DeliveryOrderModel
+                                                   {
+                                                       Id = p.Id,
+                                                       ContactId = p.ContactId,
+                                                       Code = p.Code,
+                                                       DeliveryDate = p.DeliveryDate,
+                                                       IsConfirmed = p.IsConfirmed,
+                                                       IsDeleted = p.IsDeleted,
+                                                       CreatedAt = p.CreatedAt,
+                                                       UpdatedAt = p.UpdatedAt,
+                                                       DeletedAt = p.DeletedAt
+                                                   }).AsQueryable();
+
+                return dom.ToList();
+            }
+        }
+
+        /*
+         * CREATE
+         */
 
         /// <summary>
         /// Create a new delivery order.
@@ -84,6 +120,10 @@ namespace StockControl.Repository
             return Create(newdeliveryorder);
         }
 
+        /*
+         * DELETE
+         */
+
         /// <summary>
         /// Delete a certain deliveryOrder
         /// </summary>
@@ -99,6 +139,10 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * UPDATE
+         */
+
         /// <summary>
         /// Update a delivery order.
         /// </summary>
@@ -106,7 +150,7 @@ namespace StockControl.Repository
         /// <returns>The updated delivery order</returns>
         public DeliveryOrder UpdateDeliveryOrder(DeliveryOrder deliveryOrder)
         {
-            DeliveryOrder d = Find(x => x.Id == deliveryOrder.Id);
+            DeliveryOrder d = Find(x => x.Id == deliveryOrder.Id && !x.IsDeleted);
             if (d != null)
             {
                 d.Id = deliveryOrder.Id;
@@ -134,25 +178,30 @@ namespace StockControl.Repository
             using (var db = GetContext())
             {
                 IQueryable<DeliveryOrderDetailModel> dodm = (from dod in db.DeliveryOrderDetails
-                                                      join d in db.DeliveryOrders on dod.DeliveryOrderId equals d.Id
-                                                      select new DeliveryOrderDetailModel
-                                                      {
-                                                          Id = dod.Id,
-                                                          DeliveryOrderId = dod.DeliveryOrderId,
-                                                          Code = dod.Code,
-                                                          Quantity = dod.Quantity,
-                                                          ItemId = dod.ItemId,
-                                                          SalesOrderDetailId = dod.SalesOrderDetailId,
-                                                          IsConfirmed = dod.IsConfirmed,
-                                                          IsDeleted = d.IsDeleted,
-                                                          CreatedAt = d.CreatedAt,
-                                                          UpdatedAt = d.UpdatedAt,
-                                                          DeletedAt = d.DeletedAt
-                                                      }).AsQueryable();
+                                                             join d in db.DeliveryOrders on dod.DeliveryOrderId equals d.Id
+                                                             where !d.IsDeleted && !dod.IsDeleted
+                                                             select new DeliveryOrderDetailModel
+                                                             {
+                                                                 Id = dod.Id,
+                                                                 DeliveryOrderId = dod.DeliveryOrderId,
+                                                                 Code = dod.Code,
+                                                                 Quantity = dod.Quantity,
+                                                                 ItemId = dod.ItemId,
+                                                                 SalesOrderDetailId = dod.SalesOrderDetailId,
+                                                                 IsConfirmed = dod.IsConfirmed,
+                                                                 IsDeleted = d.IsDeleted,
+                                                                 CreatedAt = d.CreatedAt,
+                                                                 UpdatedAt = d.UpdatedAt,
+                                                                 DeletedAt = d.DeletedAt
+                                                             }).AsQueryable();
 
                 return dodm.ToList();
             }
         }
+
+        /*
+         * GET DETAIL
+         */
 
         /// <summary>
         /// Get specific delivery order details from Database.
@@ -164,25 +213,58 @@ namespace StockControl.Repository
             using (var db = GetContext())
             {
                 DeliveryOrderDetailModel dodm = (from dod in db.DeliveryOrderDetails
-                                                             where dod.Id == deliveryOrderDetailId
-                                                             select new DeliveryOrderDetailModel
-                                                             {
-                                                                 Id = dod.Id,
-                                                                 DeliveryOrderId = dod.DeliveryOrderId,
-                                                                 Code = dod.Code,
-                                                                 Quantity = dod.Quantity,
-                                                                 ItemId = dod.ItemId,
-                                                                 SalesOrderDetailId = dod.SalesOrderDetailId,
-                                                                 IsConfirmed = dod.IsConfirmed,
-                                                                 IsDeleted = dod.IsDeleted,
-                                                                 CreatedAt = dod.CreatedAt,
-                                                                 UpdatedAt = dod.UpdatedAt,
-                                                                 DeletedAt = dod.DeletedAt
-                                                             }).FirstOrDefault();
+                                                 where dod.Id == deliveryOrderDetailId && !dod.IsDeleted
+                                                 select new DeliveryOrderDetailModel
+                                                 {
+                                                     Id = dod.Id,
+                                                     DeliveryOrderId = dod.DeliveryOrderId,
+                                                     Code = dod.Code,
+                                                     Quantity = dod.Quantity,
+                                                     ItemId = dod.ItemId,
+                                                     SalesOrderDetailId = dod.SalesOrderDetailId,
+                                                     IsConfirmed = dod.IsConfirmed,
+                                                     IsDeleted = dod.IsDeleted,
+                                                     CreatedAt = dod.CreatedAt,
+                                                     UpdatedAt = dod.UpdatedAt,
+                                                     DeletedAt = dod.DeletedAt
+                                                 }).FirstOrDefault();
 
                 return dodm;
             }
         }
+
+        /// <summary>
+        /// Get specific delivery order details from Database.
+        /// </summary>
+        /// <param name="deliveryOrderDetailId">DeliveryOrderDetail Id</param>
+        /// <returns>A delivery order detail</returns>
+        public List<DeliveryOrderDetailModel> GetDeliveryOrderDetailBySalesOrderDetail(int salesOrderDetailId)
+        {
+            using (var db = GetContext())
+            {
+                IQueryable<DeliveryOrderDetailModel> dodm = (from dod in db.DeliveryOrderDetails
+                                                 where dod.SalesOrderDetailId == salesOrderDetailId && !dod.IsDeleted
+                                                 select new DeliveryOrderDetailModel
+                                                 {
+                                                     Id = dod.Id,
+                                                     DeliveryOrderId = dod.DeliveryOrderId,
+                                                     Code = dod.Code,
+                                                     Quantity = dod.Quantity,
+                                                     ItemId = dod.ItemId,
+                                                     SalesOrderDetailId = dod.SalesOrderDetailId,
+                                                     IsConfirmed = dod.IsConfirmed,
+                                                     IsDeleted = dod.IsDeleted,
+                                                     CreatedAt = dod.CreatedAt,
+                                                     UpdatedAt = dod.UpdatedAt,
+                                                     DeletedAt = dod.DeletedAt
+                                                 }).AsQueryable();
+
+                return dodm.ToList();
+            }
+        }
+        /*
+         * CREATE DETAIL
+         */
 
         /// <summary>
         /// Create a new delivery order detail.
@@ -215,6 +297,10 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * DELETE DETAIL
+         */
+
         /// <summary>
         /// Delete a certain delivery order detail
         /// </summary>
@@ -242,13 +328,17 @@ namespace StockControl.Repository
         {
             using (var db = GetContext())
             {
-                List<DeliveryOrderDetail> dod = (from d in db.DeliveryOrderDetails where d.DeliveryOrderId == deliveryOrderId select d).ToList();
-                
+                List<DeliveryOrderDetail> dod = (from d in db.DeliveryOrderDetails
+                                                 where d.DeliveryOrderId == deliveryOrderId && !d.IsDeleted
+                                                 select d).ToList();
+
                 if (dod != null)
                 {
                     foreach (var eachdetail in dod)
                     {
-                        var updatedod = (from d in db.DeliveryOrderDetails where d.Id == eachdetail.Id select d).FirstOrDefault();
+                        var updatedod = (from d in db.DeliveryOrderDetails
+                                         where d.Id == eachdetail.Id && !d.IsDeleted
+                                         select d).FirstOrDefault();
                         if (updatedod != null)
                         {
                             updatedod.IsDeleted = true;
@@ -261,6 +351,10 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * UPDATE DETAIL
+         */
+
         /// <summary>
         /// Update confirmation of all delivery order details that connects to the parent DeliveryOrder 
         /// </summary>
@@ -270,13 +364,17 @@ namespace StockControl.Repository
         {
             using (var db = GetContext())
             {
-                List<DeliveryOrderDetail> dod = (from d in db.DeliveryOrderDetails where d.DeliveryOrderId == deliveryOrderId select d).ToList();
+                List<DeliveryOrderDetail> dod = (from d in db.DeliveryOrderDetails
+                                                 where d.DeliveryOrderId == deliveryOrderId && !d.IsDeleted
+                                                 select d).ToList();
 
                 if (dod != null)
                 {
                     foreach (var eachdetail in dod)
                     {
-                        var updatedod = (from d in db.DeliveryOrderDetails where d.Id == eachdetail.Id select d).FirstOrDefault();
+                        var updatedod = (from d in db.DeliveryOrderDetails
+                                         where d.Id == eachdetail.Id && !d.IsDeleted
+                                         select d).FirstOrDefault();
                         if (updatedod != null)
                         {
                             updatedod.IsConfirmed = IsConfirmed;
@@ -298,7 +396,9 @@ namespace StockControl.Repository
         {
             using (var db = GetContext())
             {
-                DeliveryOrderDetail dod = (from d in db.DeliveryOrderDetails where d.Id == deliveryOrderDetail.Id select d).FirstOrDefault();
+                DeliveryOrderDetail dod = (from d in db.DeliveryOrderDetails
+                                           where d.Id == deliveryOrderDetail.Id && !d.IsDeleted
+                                           select d).FirstOrDefault();
                 if (dod != null)
                 {
                     dod.Id = deliveryOrderDetail.Id;
@@ -317,29 +417,6 @@ namespace StockControl.Repository
                     return dod;
                 }
                 return dod;
-            }
-        }
-
-        public List<DeliveryOrderModel> GetDeliveryOrderByContactId(int contactId)
-        {
-            using (var db = GetContext())
-            {
-                IQueryable<DeliveryOrderModel> dom = (from p in db.DeliveryOrders
-                                                      where p.IsDeleted == false && p.ContactId == contactId
-                                                      select new DeliveryOrderModel
-                                                   {
-                                                       Id = p.Id,
-                                                       ContactId = p.ContactId,
-                                                       Code = p.Code,
-                                                       DeliveryDate = p.DeliveryDate,
-                                                       IsConfirmed = p.IsConfirmed,
-                                                       IsDeleted = p.IsDeleted,
-                                                       CreatedAt = p.CreatedAt,
-                                                       UpdatedAt = p.UpdatedAt,
-                                                       DeletedAt = p.DeletedAt
-                                                   }).AsQueryable();
-
-                return dom.ToList();
             }
         }
     }

@@ -9,6 +9,10 @@ namespace StockControl.Repository
 {
     public class ContactRepository : EfRepository<Contact>, IContactRepository
     {
+        /*
+         * GET
+         */
+
         /// <summary>
         /// Get all contacts from Database.
         /// </summary>
@@ -18,7 +22,32 @@ namespace StockControl.Repository
              using (var db = GetContext())
             {
                 IQueryable<ContactModel> cm = (from c in db.Contacts
-                                               where c.IsDeleted == false
+                                               where !c.IsDeleted
+                                               select new ContactModel
+                                               {
+                                                   Id = c.Id,
+                                                   Name = c.Name,
+                                                   Address = c.Address,
+                                                   IsDeleted = c.IsDeleted,
+                                                   CreatedAt = c.CreatedAt,
+                                                   UpdatedAt = c.UpdatedAt,
+                                                   DeletedAt = c.DeletedAt
+                                               }).AsQueryable();
+
+                return cm.ToList();
+            }
+        }
+
+        /// <summary>
+        /// Get all deleted contacts from Database. ONLY to be used when requested.
+        /// </summary>
+        /// <returns>All deleted contacts</returns>
+        public List<ContactModel> GetDeletedList()
+        {
+            using (var db = GetContext())
+            {
+                IQueryable<ContactModel> cm = (from c in db.Contacts
+                                               where c.IsDeleted
                                                select new ContactModel
                                                {
                                                    Id = c.Id,
@@ -43,7 +72,7 @@ namespace StockControl.Repository
             using (var db = GetContext())
             {
                 ContactModel cm = (from c in db.Contacts
-                                    where c.IsDeleted == false && c.Id == Id
+                                    where !c.IsDeleted && c.Id == Id
                                     select new ContactModel
                                     {
                                         Id = c.Id,
@@ -58,6 +87,11 @@ namespace StockControl.Repository
                 return cm;
             }
         }
+
+        /*
+         * CREATE
+         */
+
         /// <summary>
         /// Create a new contact.
         /// </summary>
@@ -76,13 +110,17 @@ namespace StockControl.Repository
             return Create(newcontact);
         }
 
+        /*
+         * DELETE
+         */
+
         /// <summary>
         /// Delete a certain contact
         /// </summary>
         /// <param name="id">Contact Id</param>
         public void DeleteContact(int id)
         {
-            Contact c = Find(x => x.Id == id && x.IsDeleted == false);
+            Contact c = Find(x => x.Id == id && !x.IsDeleted);
             if (c != null)
             {
                 c.IsDeleted = true;
@@ -91,6 +129,10 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * UPDATE
+         */
+
         /// <summary>
         /// Update a contact.
         /// </summary>
@@ -98,7 +140,7 @@ namespace StockControl.Repository
         /// <returns>The updated contact</returns>
         public Contact UpdateContact(Contact contact)
         {
-            Contact c = Find(x => x.Id == contact.Id && x.IsDeleted == false);
+            Contact c = Find(x => x.Id == contact.Id && !x.IsDeleted);
             if (c != null)
             {
                 c.Id = contact.Id;

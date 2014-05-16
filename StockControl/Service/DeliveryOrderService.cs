@@ -12,10 +12,15 @@ namespace StockControl.Service
     {
         private readonly static log4net.ILog LOG = log4net.LogManager.GetLogger("DeliveryOrderService");
 
+        /*
+         * GET
+         */
+
         /// <summary>
-        /// Get all deliveryOrders.
+        /// Get all delivery orders.
         /// </summary>
-        /// <returns></returns>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <returns>all delivery orders</returns>
         public List<DeliveryOrderModel> GetDeliveryOrderList(IDeliveryOrderRepository _deliveryOrderRepository)
         {
             List<DeliveryOrderModel> model = new List<DeliveryOrderModel>();
@@ -31,6 +36,12 @@ namespace StockControl.Service
             return model;
         }
 
+        /// <summary>
+        /// Get a delivery order
+        /// </summary>
+        /// <param name="orderId">Id of the delivery order</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <returns>a delivery order</returns>
         public DeliveryOrderModel GetDeliveryOrder(int orderId, IDeliveryOrderRepository _deliveryOrderRepository)
         {
             DeliveryOrderModel model = new DeliveryOrderModel();
@@ -40,13 +51,22 @@ namespace StockControl.Service
             }
             catch (Exception ex)
             {
-                LOG.Error("GetDeliveryOrderList Failed", ex);
+                LOG.Error("GetDeliveryOrder Failed", ex);
             }
 
             return model;
         }
 
-        // Create DeliveryOrder
+        /*
+         * CREATE
+         */
+
+        /// <summary>
+        /// Create a delivery order.
+        /// </summary>
+        /// <param name="deliveryOrder">DeliveryOrderModel object</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <returns>a delivery order</returns>
         public ResponseModel CreateDeliveryOrder(DeliveryOrderModel deliveryOrder, IDeliveryOrderRepository _deliveryOrderRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -70,7 +90,7 @@ namespace StockControl.Service
                 newDeliveryOrder.DeliveryDate = deliveryOrder.DeliveryDate;
                 newDeliveryOrder.IsConfirmed = deliveryOrder.IsConfirmed;
                 newDeliveryOrder.IsDeleted = deliveryOrder.IsDeleted;
-                newDeliveryOrder.CreatedAt = deliveryOrder.CreatedAt;
+                newDeliveryOrder.CreatedAt = DateTime.Now;
                 newDeliveryOrder.UpdatedAt = deliveryOrder.UpdatedAt;
                 newDeliveryOrder.DeletedAt = deliveryOrder.DeletedAt;
 
@@ -78,7 +98,7 @@ namespace StockControl.Service
                 newDeliveryOrder.Id = newDeliveryOrder.Id;
 
                 respModel.isValid = true;
-                respModel.message = "Create Data Success...";
+                respModel.message = "Create Delivery Order Success...";
                 respModel.objResult = deliveryOrder;
 
                 LOG.Error("CreateDeliveryOrder Sucess");
@@ -98,19 +118,28 @@ namespace StockControl.Service
 
                 LOG.Error("CreateDeliveryOrder Failed", dbEx);
                 respModel.isValid = false;
-                respModel.message = "Create DeliveryOrder failed, Please try again or contact your administrator.";
+                respModel.message = "Create Delivery Order failed, Please try again or contact your administrator.";
             }
             catch (Exception ex)
             {
                 LOG.Error("CreateDeliveryOrder Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Create DeliveryOrder Failed, Please try again or contact your administrator.";
+                respModel.message = "Create Delivery Order Failed, Please try again or contact your administrator.";
             }
 
             return respModel;
         }
 
-        // Delete DeliveryOrder && its children DeliveryOrderDetail
+        /*
+         * DELETE
+         */
+
+        /// <summary>
+        /// Delete a delivery order and all its children delivery order details
+        /// </summary>
+        /// <param name="deliveryOrderId">Id of the delivery order</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository</param>
+        /// <returns>a response model</returns>
         public ResponseModel DeleteDeliveryOrder(int deliveryOrderId, IDeliveryOrderRepository _deliveryOrderRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -119,7 +148,7 @@ namespace StockControl.Service
             respModel.objResult = null;
             try
             {
-                DeliveryOrder deleteDeliveryOrder = _deliveryOrderRepository.Find(p => p.Id == deliveryOrderId);
+                DeliveryOrder deleteDeliveryOrder = _deliveryOrderRepository.Find(p => p.Id == deliveryOrderId && !p.IsDeleted);
                 if (deleteDeliveryOrder != null)
                 {
                     string message = "";
@@ -133,17 +162,21 @@ namespace StockControl.Service
 
                     // Delete DeliveryOrder
                     _deliveryOrderRepository.DeleteDeliveryOrder(deliveryOrderId);
+                    respModel.objResult = model;
 
-                    // Delete DeliveryOrder Detail
+                    // Get all subsequent DeliveryOrderDetails
                     List<DeliveryOrderDetailModel> deleteDeliveryOrderDetails = _deliveryOrderRepository.GetDeliveryOrderDetailList(deliveryOrderId);
 
                     if (deleteDeliveryOrderDetails.Count() > 0)
                     {
+                        // Delete all subsequent DeliveryOrderDetails
                         _deliveryOrderRepository.DeleteDeliveryOrderDetailByDeliveryOrderId(deliveryOrderId);
+                        // Adding the line below will set respModel to all the subsequent details
+                        // respModel.objResult = deleteDeliveryOrderDetails;
                     }
 
                     respModel.isValid = true;
-                    respModel.message = "Delete DeliveryOrder Success...";
+                    respModel.message = "Delete delivery order and its delivery order details Success...";
                 }
             }
             catch (DbEntityValidationException dbEx)
@@ -161,19 +194,28 @@ namespace StockControl.Service
 
                 LOG.Error("DeleteDeliveryOrder Failed", dbEx);
                 respModel.isValid = false;
-                respModel.message = "Delete DeliveryOrder failed, Please try again or deliveryOrder your administrator.";
+                respModel.message = "Delete Delivery Order failed, Please try again or deliveryOrder your administrator.";
             }
             catch (Exception ex)
             {
                 LOG.Error("DeleteDeliveryOrder Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Delete DeliveryOrder Failed, Please try again or deliveryOrder your administrator.";
+                respModel.message = "Delete Delivery Order Failed, Please try again or deliveryOrder your administrator.";
             }
 
             return respModel;
         }
 
-        // Update DeliveryOrder
+        /*
+         * UPDATE
+         */
+
+        /// <summary>
+        /// Update a delivery order.
+        /// </summary>
+        /// <param name="deliveryOrder">DeliveryOrderModel object</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <returns>a response model</returns>
         public ResponseModel UpdateDeliveryOrder(DeliveryOrderModel deliveryOrder, IDeliveryOrderRepository _deliveryOrderRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -190,7 +232,7 @@ namespace StockControl.Service
                     return respModel;
                 }
 
-                DeliveryOrder updateDeliveryOrder = _deliveryOrderRepository.Find(p => p.Id == deliveryOrder.Id);
+                DeliveryOrder updateDeliveryOrder = _deliveryOrderRepository.Find(p => p.Id == deliveryOrder.Id && !p.IsDeleted);
                 if (updateDeliveryOrder != null)
                 {
                     updateDeliveryOrder.Id = deliveryOrder.Id;
@@ -206,7 +248,7 @@ namespace StockControl.Service
                     _deliveryOrderRepository.UpdateDeliveryOrder(updateDeliveryOrder);
 
                     respModel.isValid = true;
-                    respModel.message = "Update Data Success...";
+                    respModel.message = "Update Delivery Order Success...";
                     respModel.objResult = deliveryOrder;
 
                     LOG.Info("UpdateDeliveryOrder Success");
@@ -232,18 +274,30 @@ namespace StockControl.Service
 
                 LOG.Error("UpdateDeliveryOrder Failed", dbEx);
                 respModel.isValid = false;
-                respModel.message = "Update data failed, Please try again or contact your administrator.";
+                respModel.message = "Update delivery order failed, Please try again or contact your administrator.";
             }
             catch (Exception ex)
             {
                 LOG.Error("UpdateDeliveryOrder Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Update data Failed, Please try again or contact your administrator.";
+                respModel.message = "Update delivery order Failed, Please try again or contact your administrator.";
             }
 
             return respModel;
         }
+        
+        /*
+         * CONFIRM
+         */
 
+        /// <summary>
+        /// Confirm delivery order. This function also automatically confirms all its children delivery order details.
+        /// </summary>
+        /// <param name="deliveryOrder">DeliveryOrderModel object</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <param name="_stockMutationRepository">IStockMutationRespository object</param>
+        /// <returns>a response model</returns>
         public ResponseModel ConfirmDeliveryOrder(DeliveryOrderModel deliveryOrder, IDeliveryOrderRepository _deliveryOrderRepository, IItemRepository _itemRepository, IStockMutationRepository _stockMutationRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -260,7 +314,7 @@ namespace StockControl.Service
                     return respModel;
                 }
 
-                DeliveryOrder confirmDeliveryOrder = _deliveryOrderRepository.Find(p => p.Id == deliveryOrder.Id);
+                DeliveryOrder confirmDeliveryOrder = _deliveryOrderRepository.Find(p => p.Id == deliveryOrder.Id && !p.IsDeleted);
                 if (confirmDeliveryOrder != null)
                 {
                     confirmDeliveryOrder.Id = deliveryOrder.Id;
@@ -282,18 +336,16 @@ namespace StockControl.Service
 
                     if (confirmDeliveryOrderDetails.Count() > 0)
                     {
-                        
-                        foreach (var dod in confirmDeliveryOrderDetails) {
+                        foreach (var dod in confirmDeliveryOrderDetails)
+                        {
                             respModel = this.ConfirmDeliveryOrderDetail(dod, _deliveryOrderRepository, _itemRepository, _stockMutationRepository);
                         }
-                        
+                        LOG.Info("ConfirmDeliveryOrderDetails Success");
                     }
 
-                    LOG.Info("ConfirmDeliveryOrderDetails Success");
-
                     respModel.isValid = true;
-                    respModel.message = "Confirm Data Success...";
-                    respModel.objResult = deliveryOrder;
+                    respModel.message = "Confirm Delivery Order Success...";
+                    respModel.objResult = confirmDeliveryOrder;
                 }
                 else
                 {
@@ -301,7 +353,7 @@ namespace StockControl.Service
                     respModel.message = "DeliveryOrder not found...";
                 }
                 respModel.isValid = true;
-                respModel.message = "Confirm Data Success...";
+                respModel.message = "Confirm Delivery Order Success...";
                 respModel.objResult = deliveryOrder;
 
                 LOG.Info("ConfirmDeliveryOrder Success");
@@ -316,24 +368,34 @@ namespace StockControl.Service
                     foreach (var validationError in validationErrors.ValidationErrors)
                     {
                         //Trace.TraceInformation("Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
-                        LOG.ErrorFormat("UpdateDeliveryOrder, Error:Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
+                        LOG.ErrorFormat("ConfirmDeliveryOrder, Error:Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
                     }
                 }
 
-                LOG.Error("UpdateDeliveryOrder Failed", dbEx);
+                LOG.Error("ConfirmDeliveryOrder Failed", dbEx);
                 respModel.isValid = false;
-                respModel.message = "Update data failed, Please try again or contact your administrator.";
+                respModel.message = "Confirm delivery order failed, Please try again or contact your administrator.";
             }
             catch (Exception ex)
             {
-                LOG.Error("UpdateDeliveryOrder Failed", ex);
+                LOG.Error("ConfirmDeliveryOrder Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Update data Failed, Please try again or contact your administrator.";
+                respModel.message = "Confirm delivery order Failed, Please try again or contact your administrator.";
             }
 
             return respModel;
         }
+        
+        /*
+         * UNCONFIRM
+         */
 
+        /// <summary>
+        /// Unconfirm delivery order.
+        /// </summary>
+        /// <param name="deliveryOrder">DeliveryOrderModel object</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <returns>a response model</returns>
         public ResponseModel UnconfirmDeliveryOrder(DeliveryOrderModel deliveryOrder, IDeliveryOrderRepository _deliveryOrderRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -343,14 +405,14 @@ namespace StockControl.Service
             try
             {
                 string message = "";
-                respModel.isValid = this.ValidateConfirmDeliveryOrder(deliveryOrder, _deliveryOrderRepository, out message);
+                respModel.isValid = this.ValidateUnconfirmDeliveryOrder(deliveryOrder, _deliveryOrderRepository, out message);
                 if (!respModel.isValid)
                 {
                     respModel.message = message;
                     return respModel;
                 }
 
-                DeliveryOrder unconfirmDeliveryOrder = _deliveryOrderRepository.Find(p => p.Id == deliveryOrder.Id);
+                DeliveryOrder unconfirmDeliveryOrder = _deliveryOrderRepository.Find(p => p.Id == deliveryOrder.Id && !p.IsDeleted);
                 if (unconfirmDeliveryOrder != null)
                 {
                     unconfirmDeliveryOrder.Id = deliveryOrder.Id;
@@ -387,10 +449,10 @@ namespace StockControl.Service
                     respModel.message = "DeliveryOrder not found...";
                 }
                 respModel.isValid = true;
-                respModel.message = "Confirm Data Success...";
+                respModel.message = "Unconfirm Delivery Order Success...";
                 respModel.objResult = deliveryOrder;
 
-                LOG.Info("ConfirmDeliveryOrder Success");
+                LOG.Info("UnconfirmDeliveryOrder Success");
 
             }
             catch (DbEntityValidationException dbEx)
@@ -402,24 +464,34 @@ namespace StockControl.Service
                     foreach (var validationError in validationErrors.ValidationErrors)
                     {
                         //Trace.TraceInformation("Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
-                        LOG.ErrorFormat("UpdateDeliveryOrder, Error:Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
+                        LOG.ErrorFormat("UnconfirmDeliveryOrder, Error:Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
                     }
                 }
 
-                LOG.Error("UpdateDeliveryOrder Failed", dbEx);
+                LOG.Error("UnconfirmDeliveryOrder Failed", dbEx);
                 respModel.isValid = false;
-                respModel.message = "Update data failed, Please try again or contact your administrator.";
+                respModel.message = "Unconfirm delivery order failed, Please try again or contact your administrator.";
             }
             catch (Exception ex)
             {
-                LOG.Error("UpdateDeliveryOrder Failed", ex);
+                LOG.Error("UnconfirmDeliveryOrder Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Update data Failed, Please try again or contact your administrator.";
+                respModel.message = "Unconfirm delivery order Failed, Please try again or contact your administrator.";
             }
 
             return respModel;
         }
 
+        /*
+         * VALIDATE
+         */
+
+        /// <summary>
+        /// Private function to validate a delivery order.
+        /// </summary>
+        /// <param name="model">DeliveryOrderModel object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         private bool Validate(DeliveryOrderModel model, out string message)
         {
             bool isValid = true;
@@ -444,6 +516,12 @@ namespace StockControl.Service
             return isValid;
         }
 
+        /// <summary>
+        /// Validate a delivery order when it is created.
+        /// </summary>
+        /// <param name="model">DeliveryOrderModel object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateCreateDeliveryOrder(DeliveryOrderModel model, out string message)
         {
             bool isValid = this.Validate(model, out message);
@@ -451,35 +529,31 @@ namespace StockControl.Service
             return isValid;
         }
 
+        /// <summary>
+        /// Validate a delivery order when it is updated.
+        /// </summary>
+        /// <param name="model">DeliveryOrderModel object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateUpdateDeliveryOrder(DeliveryOrderModel model, out string message)
         {
             bool isValid = this.Validate(model, out message);
 
             if (model.IsConfirmed)
             {
-                message = "Confirmed data cannot be updated. Please try again or contact your administrator.";
+                message = "Confirmed delivery order cannot be updated. Please try again or contact your administrator.";
                 return false;
             }
 
             return isValid;
         }
-
-        public bool ValidateConfirmDeliveryOrder(DeliveryOrderModel model, IDeliveryOrderRepository _deliveryOrderRepository, out string message)
-        {
-            // DeliveryOrderDetail.count != 0
-            bool isValid = true;
-            message = "";
-
-            if (_deliveryOrderRepository.GetDeliveryOrderDetailList(model.Id).Count() == 0)
-            {
-                message = "There is no existing Delivery Order Detail...";
-                return false;
-            }
-            return isValid;
-        }
-
-
-        // Can't destroy if it's confirmed
+        /// <summary>
+        /// Validate a delivery order when it is deleted.
+        /// It is invalid when a delivery order has been confirmed.
+        /// </summary>
+        /// <param name="model">DeliveryOrderModel object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateDeleteDeliveryOrder(DeliveryOrderModel model, out string message)
         {
             bool isValid = true;
@@ -494,12 +568,38 @@ namespace StockControl.Service
             return isValid;
         }
 
-        // Is this right logic??
-        // Instruction: Can't unconfirm if item.ready <  0
-        // Why? 
-        // Upon unconfirm item.ready ++, item.pendingDelivery++;
-        // So, no validation is necessary for quantity calculation
-        public bool ValidateUnconfirmDeliveryOrder(DeliveryOrderModel deliveryOrder, out string message)
+        /// <summary>
+        /// Validate a delivery order when it is confirmed.
+        /// It is valid when it has any delivery order details.
+        /// </summary>
+        /// <param name="model">DeliveryOrderModel object</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
+        public bool ValidateConfirmDeliveryOrder(DeliveryOrderModel model, IDeliveryOrderRepository _deliveryOrderRepository, out string message)
+        {
+            bool isValid = true;
+            message = "";
+
+            if (_deliveryOrderRepository.GetDeliveryOrderDetailList(model.Id).Count() == 0)
+            {
+                message = "There is no existing Delivery Order Detail...";
+                return false;
+            }
+            return isValid;
+        }
+
+        /// <summary>
+        /// TODO:
+        /// Validate a delivery order when it is unconfirmed.
+        /// Instruction: Can't unconfirm if item.ready is less than 0
+        /// Problem: Upon unconfirmation, both item.Ready and item.PendingDelivery increase in number
+        ///          Does this mean validation will be true at all times?
+        /// </summary>
+        /// <param name="deliveryOrder">DeliveryOrderModel object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
+        public bool ValidateUnconfirmDeliveryOrder(DeliveryOrderModel deliveryOrder, IDeliveryOrderRepository _deliveryOrderRepository, out string message)
         {
             bool isValid = true;
             message = "";
@@ -507,17 +607,16 @@ namespace StockControl.Service
             return isValid;
         }
 
-
         /*
-         * 
-         *      DELIVERY ORDER LIST 
-         * 
+         * GET DETAIL
          */
 
         /// <summary>
-        /// Get all deliveryOrders.
+        /// Get all delivery order details.
         /// </summary>
-        /// <returns></returns>
+        /// <param name="deliveryOrderId">Id of the delivery order</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <returns>all delivery order details associated to the delivery order</returns>
         public List<DeliveryOrderDetailModel> GetDeliveryOrderDetailList(int deliveryOrderId, IDeliveryOrderRepository _deliveryOrderRepository)
         {
             List<DeliveryOrderDetailModel> model = new List<DeliveryOrderDetailModel>();
@@ -533,6 +632,12 @@ namespace StockControl.Service
             return model;
         }
 
+        /// <summary>
+        /// Get a delivery order detail
+        /// </summary>
+        /// <param name="deliveryOrderDetailId">Id of the delivery order detail</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <returns>a delivery order detail</returns>
         public DeliveryOrderDetailModel GetDeliveryOrderDetail(int deliveryOrderDetailId, IDeliveryOrderRepository _deliveryOrderRepository)
         {
             DeliveryOrderDetailModel model = new DeliveryOrderDetailModel();
@@ -548,6 +653,17 @@ namespace StockControl.Service
             return model;
         }
 
+        /*
+         * CREATE DETAIL
+         */
+
+        /// <summary>
+        /// Create a delivery order detail.
+        /// </summary>
+        /// <param name="deliveryOrderDetail">DeliveryOrderDetail object</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <param name="_salesOrderRepository">ISalesOrderRepository object</param>
+        /// <returns>a response model</returns>
         public ResponseModel CreateDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, IDeliveryOrderRepository _deliveryOrderRepository, ISalesOrderRepository _salesOrderRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -581,7 +697,7 @@ namespace StockControl.Service
                 newDeliveryOrderDetail.Id = newDeliveryOrderDetail.Id;
 
                 respModel.isValid = true;
-                respModel.message = "Create Data Success...";
+                respModel.message = "Create Delivery Order Detail Success...";
                 respModel.objResult = deliveryOrderDetail;
 
                 LOG.Error("CreateDeliveryOrderDetail Sucess");
@@ -607,7 +723,7 @@ namespace StockControl.Service
             {
                 LOG.Error("CreateDeliveryOrderDetail Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Create DeliveryOrder Failed, Please try again or contact your administrator.";
+                respModel.message = "Create DeliveryOrderDetail Failed, Please try again or contact your administrator.";
             }
 
             return respModel;
@@ -616,12 +732,12 @@ namespace StockControl.Service
 
 
         /// <summary>
-        /// Please use DeleteDeliveryOrder instead of this function. This only delete all the deliver order details without deleting its
-        /// parent. DeleteDeliveryOrder will delete delivery order and all its delivery order details.
+        /// Please use DeleteDeliveryOrder() instead of this function. This only deletes all the deliver order details without deleting its
+        /// parent. DeleteDeliveryOrder() will delete delivery order and all its delivery order details.
         /// </summary>
-        /// <param name="deliveryOrderId">ID of the delivery order</param>
-        /// <param name="_deliveryOrderRepository">Passed on variable DO Repository</param>
-        /// <returns>Response as a result of deletion of delivery order details</returns>
+        /// <param name="deliveryOrderId">Id of the delivery order</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <returns>a response model</returns>
         public ResponseModel DeleteDeliveryOrderDetailByDeliveryOrderId(int deliveryOrderId, IDeliveryOrderRepository _deliveryOrderRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -639,7 +755,7 @@ namespace StockControl.Service
                 }
                 _deliveryOrderRepository.DeleteDeliveryOrderDetailByDeliveryOrderId(deliveryOrderId);
 
-                respModel.message ="Delete Order Details completed. Please make sure the that delivery order has already been deleted";
+                respModel.message ="Delete Delivery Order Details completed. Please make sure the that delivery order has already been deleted";
                 return respModel;
 
             }
@@ -670,6 +786,12 @@ namespace StockControl.Service
             return respModel;
         }
         
+        /// <summary>
+        /// Delete delivery order detail.
+        /// </summary>
+        /// <param name="deliveryOrderDetailId">Id of the delivery order detail</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <returns>a response model</returns>
         public ResponseModel DeleteDeliveryOrderDetail(int deliveryOrderDetailId, IDeliveryOrderRepository _deliveryOrderRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -723,7 +845,17 @@ namespace StockControl.Service
             return respModel;
         }
 
+        /*
+         * UPDATE DETAIL
+         */
 
+        /// <summary>
+        /// Update a delivery order detail.
+        /// </summary>
+        /// <param name="deliveryOrderDetail">DeliveryOrderDetailModel object</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <param name="_salesOrderRepository">ISalesOrderRepository object</param>
+        /// <returns>a response model</returns>
         public ResponseModel UpdateDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, IDeliveryOrderRepository _deliveryOrderRepository, ISalesOrderRepository _salesOrderRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -740,35 +872,26 @@ namespace StockControl.Service
                     return respModel;
                 }
 
-                DeliveryOrderDetailModel model = _deliveryOrderRepository.GetDeliveryOrderDetail(deliveryOrderDetail.Id);
-                if (model != null)
-                {
-                    DeliveryOrderDetail dod = new DeliveryOrderDetail();
-                    dod.Id = model.Id;
-                    dod.DeliveryOrderId = model.DeliveryOrderId;
-                    dod.Code = model.Code;
-                    dod.Quantity = model.Quantity;
-                    dod.ItemId = model.ItemId;
-                    dod.SalesOrderDetailId = model.SalesOrderDetailId;
-                    dod.IsConfirmed = model.IsConfirmed;
-                    dod.IsDeleted = model.IsDeleted;
-                    dod.CreatedAt = model.CreatedAt;
-                    dod.UpdatedAt = DateTime.Now;
-                    dod.DeletedAt = model.DeletedAt;
+                DeliveryOrderDetail dod = new DeliveryOrderDetail();
+                dod.Id = deliveryOrderDetail.Id;
+                dod.DeliveryOrderId = deliveryOrderDetail.DeliveryOrderId;
+                dod.Code = deliveryOrderDetail.Code;
+                dod.Quantity = deliveryOrderDetail.Quantity;
+                dod.ItemId = deliveryOrderDetail.ItemId;
+                dod.SalesOrderDetailId = deliveryOrderDetail.SalesOrderDetailId;
+                dod.IsConfirmed = deliveryOrderDetail.IsConfirmed;
+                dod.IsDeleted = deliveryOrderDetail.IsDeleted;
+                dod.CreatedAt = deliveryOrderDetail.CreatedAt;
+                dod.UpdatedAt = DateTime.Now;
+                dod.DeletedAt = deliveryOrderDetail.DeletedAt;
 
-                    _deliveryOrderRepository.UpdateDeliveryOrderDetail(dod);
+                _deliveryOrderRepository.UpdateDeliveryOrderDetail(dod);
 
-                    respModel.isValid = true;
-                    respModel.message = "Update Data Success...";
-                    respModel.objResult = deliveryOrderDetail;
+                respModel.isValid = true;
+                respModel.message = "Update Delivery Order Detail Success...";
+                respModel.objResult = deliveryOrderDetail;
 
-                    LOG.Info("UpdateDeliveryOrderDetail Success");
-                }
-                else
-                {
-                    respModel.isValid = false;
-                    respModel.message = "DeliveryOrderDetail not found...";
-                }
+                LOG.Info("UpdateDeliveryOrderDetail Success");
             }
             catch (DbEntityValidationException dbEx)
             {
@@ -785,18 +908,25 @@ namespace StockControl.Service
 
                 LOG.Error("UpdateDeliveryOrderDetail Failed", dbEx);
                 respModel.isValid = false;
-                respModel.message = "Update data failed, Please try again or contact your administrator.";
+                respModel.message = "Update DeliveryOrderDetail failed, Please try again or contact your administrator.";
             }
             catch (Exception ex)
             {
                 LOG.Error("UpdateDeliveryOrderDetail Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Update data Failed, Please try again or contact your administrator.";
+                respModel.message = "Update DeliveryOrderDetail Failed, Please try again or contact your administrator.";
             }
 
             return respModel;
         }
 
+        /// <summary>
+        /// This function calls an update function given the parameter 'Confirm' or 'Unconfirm'.
+        /// </summary>
+        /// <param name="deliveryOrderDetail">DeliveryOrderModel object</param>
+        /// <param name="IsConfirm">Is this function Confirm or Unconfirm</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <returns>a response model</returns>
         ResponseModel UpdateConfirmationDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, bool IsConfirm, IDeliveryOrderRepository _deliveryOrderRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -805,7 +935,7 @@ namespace StockControl.Service
             respModel.objResult = null;
             try
             {
-                String message = IsConfirm ? "Confirm" : "Unconfirm";
+                String message = IsConfirm ? "Update Confirm" : "Update Unconfirm";
                 DeliveryOrderDetailModel confirmDeliveryOrderDetail = _deliveryOrderRepository.GetDeliveryOrderDetail(deliveryOrderDetail.Id);
 
                 if (confirmDeliveryOrderDetail != null)
@@ -819,7 +949,7 @@ namespace StockControl.Service
                     respModel.message = "DeliveryOrderDetail not found...";
                 }
                 respModel.isValid = true;
-                respModel.message = message + "Data Success...";
+                respModel.message = message + "DeliveryOrderDetail Success...";
                 respModel.objResult = deliveryOrderDetail;
 
                 LOG.Info(message + "DeliveryOrderDetail Success");
@@ -834,37 +964,52 @@ namespace StockControl.Service
                     foreach (var validationError in validationErrors.ValidationErrors)
                     {
                         //Trace.TraceInformation("Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
-                        LOG.ErrorFormat("UpdateDeliveryOrderDetail, Error:Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
+                        LOG.ErrorFormat("UpdateConfirmationDeliveryOrderDetail, Error:Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
                     }
                 }
 
-                LOG.Error("UpdateDeliveryOrderDetail Failed", dbEx);
+                LOG.Error("UpdateConfirmationDeliveryOrderDetail Failed", dbEx);
                 respModel.isValid = false;
-                respModel.message = "Update data failed, Please try again or contact your administrator.";
+                respModel.message = "Update Confirmation Delivery Order Detail failed, Please try again or contact your administrator.";
             }
             catch (Exception ex)
             {
-                LOG.Error("UpdateDeliveryOrderDetail Failed", ex);
+                LOG.Error("UpdateConfirmationDeliveryOrderDetail Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Update data Failed, Please try again or contact your administrator.";
+                respModel.message = "Update Confirmation Delivery Order Detail Failed, Please try again or contact your administrator.";
             }
 
             return respModel;
         }
 
+        /*
+         * CONFIRM DETAIL
+         */
+
+        /// <summary>
+        /// Confirm a delivery order detail.
+        /// </summary>
+        /// <param name="deliveryOrderDetail">DeliveryOrderDetailModel object</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <param name="_stockMutationRepository">IStockMutation object</param>
+        /// <returns>a response model</returns>
         public ResponseModel ConfirmDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, IDeliveryOrderRepository _deliveryOrderRepository, IItemRepository _itemRepository, IStockMutationRepository _stockMutationRepository)
         {
             ResponseModel respModel = new ResponseModel();
             respModel.isValid = true;
             respModel.message = "OK";
             respModel.objResult = null;
-
+            String message = "";
             try
             {
+                respModel.isValid = this.ValidateConfirmDeliveryOrderDetail(deliveryOrderDetail, _itemRepository, out message);
+                respModel.message = message;
+                if (!respModel.isValid) {return respModel;}
 
                 respModel = this.UpdateConfirmationDeliveryOrderDetail(deliveryOrderDetail, true, _deliveryOrderRepository);
 
-                Item item = _itemRepository.Find(x => x.Id == deliveryOrderDetail.ItemId);
+                Item item = _itemRepository.Find(x => x.Id == deliveryOrderDetail.ItemId && !x.IsDeleted);
                 if (item == null)
                 {
                     respModel.isValid = false;
@@ -930,29 +1075,37 @@ namespace StockControl.Service
                     foreach (var validationError in validationErrors.ValidationErrors)
                     {
                         //Trace.TraceInformation("Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
-                        LOG.ErrorFormat("UpdateDeliveryOrderDetail, Error:Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
+                        LOG.ErrorFormat("ConfirmDeliveryOrderDetail, Error:Property: {0} Error: {1}", validationError.PropertyName, validationError.ErrorMessage);
                     }
                 }
 
-                LOG.Error("UpdateDeliveryOrderDetail Failed", dbEx);
+                LOG.Error("ConfirmDeliveryOrderDetail Failed", dbEx);
                 respModel.isValid = false;
-                respModel.message = "Update data failed, Please try again or contact your administrator.";
+                respModel.message = "Confirm DeliveryOrderDetail failed, Please try again or contact your administrator.";
             }
             catch (Exception ex)
             {
-                LOG.Error("UpdateDeliveryOrderDetail Failed", ex);
+                LOG.Error("ConfirmDeliveryOrderDetail Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Update data Failed, Please try again or contact your administrator.";
+                respModel.message = "Confirm DeliveryOrderDetail Failed, Please try again or contact your administrator.";
             }
 
             return respModel;
         }
+
+        /*
+         * UNCONFIRM DETAIL
+         */
+
+        /// <summary>
+        /// Unconfirm a delivery order detail.
+        /// </summary>
+        /// <param name="deliveryOrderDetail">DeliveryOrderDetailModel object</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <returns>a response model</returns>
         public ResponseModel UnconfirmDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, IDeliveryOrderRepository _deliveryOrderRepository, IItemRepository _itemRepository)
         {
-            //Validate
-            //Unconfirm
-            //Update item.Ready
-            //Update item.PendingDelivery
             String message ="";
             ResponseModel respModel = new ResponseModel();
             respModel.isValid = true;
@@ -961,11 +1114,30 @@ namespace StockControl.Service
 
             try
             {
-                respModel.isValid = ValidateUnconfirmDeliveryOrderDetail(deliveryOrderDetail, _itemRepository, out message);
+                respModel.isValid = this.ValidateUnconfirmDeliveryOrderDetail(deliveryOrderDetail, _itemRepository, out message);
+                if (!respModel.isValid)
+                {
+                    respModel.message = message;
+                    return respModel;
+                }
 
-                if (!respModel.isValid) {return respModel;}
+                Item item = _itemRepository.Find(x => x.Id == deliveryOrderDetail.ItemId && !x.IsDeleted);
+                if (item == null)
+                {
+                    respModel.isValid = false;
+                    respModel.message = "No item found...";
+                    return respModel;
+                }
 
                 respModel = this.UpdateConfirmationDeliveryOrderDetail(deliveryOrderDetail, false, _deliveryOrderRepository);
+
+                item.PendingDelivery += deliveryOrderDetail.Quantity;
+                item.Ready += deliveryOrderDetail.Quantity;
+                item.UpdatedAt = DateTime.Now;
+                _itemRepository.UpdateItem(item);
+
+                LOG.Info("Updating Item " + item.Sku + " Adding Pending Delivery and Ready By " + deliveryOrderDetail.Quantity);
+
                 return respModel;
             }
             catch (DbEntityValidationException dbEx)
@@ -981,7 +1153,7 @@ namespace StockControl.Service
                     }
                 }
 
-                LOG.Error("UpdateDeliveryOrderDetail Failed", dbEx);
+                LOG.Error("UnconfirmDeliveryOrderDetail Failed", dbEx);
                 respModel.isValid = false;
                 respModel.message = "UnconfirmDeliveryOrderDetail failed, Please try again or contact your administrator.";
             }
@@ -995,15 +1167,27 @@ namespace StockControl.Service
             return respModel;
         }
 
-        // SalesOrderDetailId must be present
-        // Contact must be present
-        // SalesOrderDetailId belong to the Contact
-        // Quantity > 0
-        // Quantity <= PendingDelivery of the selected SalesOrderDetail
-        // Unique SalesOrderDetailId in a given DeliveryOrder -- Unchecked !! TODO
-        // SalesOrderDetail belongs to the same contact
-        // PendingDelivery in the given SalesOrderDetail > 0
-        // SalesOrderDetail.IsConfirmed == true
+        /*
+         * VALIDATE DETAIL
+         */
+
+        /// <summary>
+        /// Validate a delivery order detail when it is created / updated.
+        /// It is valid if it asserts the following rules:
+        /// The following attributes must be present:
+        /// 1. SalesOrderDetailId, Contact must be present
+        /// 2. Contact must be associated to SalesOrderDetailId 
+        /// 3. Quantity gt 0 && Quantity le PendingDelivery of SalesOrderDetail
+        /// 4. PendingDelivery of SalesOrderDetail gt 0
+        /// 5. SalesOrderDetail isConfirmed
+        /// 6. salesOrderModel.ContactId == deliveryOrderModel.ContactId
+        /// 7. Unique SalesOrderDetailId in a given DeliveryOrder -- Unchecked !! TODO
+        /// </summary>
+        /// <param name="deliveryOrderDetail">DeliveryOrderDetailModel object</param>
+        /// <param name="_deliveryOrderRepository">IDeliveryOrderRepository object</param>
+        /// <param name="_salesOrderRepository">ISalesOrderRepository object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateCreateUpdateDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, IDeliveryOrderRepository _deliveryOrderRepository, ISalesOrderRepository _salesOrderRepository, out string message)
         {
             bool isValid = true;
@@ -1032,6 +1216,7 @@ namespace StockControl.Service
             if (deliveryOrderDetail.SalesOrderDetailId == null ||
                 deliveryOrderModel.ContactId == null ||
                 salesOrderDetailModel.SalesOrderId == null ||
+
                 deliveryOrderDetail.Quantity == 0 ||
                 deliveryOrderDetail.Quantity > salesOrderDetailModel.PendingDelivery ||
                 salesOrderDetailModel.PendingDelivery <= 0 ||
@@ -1042,11 +1227,23 @@ namespace StockControl.Service
                 return false;
 
             }
-
+            if (salesOrderModel.ContactId != deliveryOrderModel.ContactId)
+            {
+                isValid = false;
+                message = "Error Validation: Different contact person...";
+                return false;
+            }
             message = "Successful Validation...";
             return true;
         }
-        // Can't be destroyed if it is confirmed
+
+        /// <summary>
+        /// Validate delivery order detail when it is deleted.
+        /// Delivery order detail can't be deleted if it is confirmed
+        /// </summary>
+        /// <param name="deliveryOrderDetail">DeliveryOrderDetailModel object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateDeleteDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, out string message)
         {
             message = "";
@@ -1057,12 +1254,21 @@ namespace StockControl.Service
             }
             return true;
         }
-        // Can't unconfirm if associate item.pendingReceival will be changed to < 0 after unconfirm
-        // Can't unconfirm if quantity of item.ready will be changed to < 0 after unconfirm
-        public bool ValidateUnconfirmDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, IItemRepository _itemRepository, out string message)
+
+        /// <summary>
+        /// TODO: Confirm with Willy if this is for Confirm / Unconfirm
+        /// Validate delivery order detail when it is unconfirmed.
+        /// Can't unconfirm if associate item.pendingReceival will be changed to lt 0 after unconfirm
+        /// Can't unconfirm if quantity of item.ready will be changed to lt 0 after unconfirm
+        /// </summary>
+        /// <param name="deliveryOrderDetail">DeliveryOrderDetailModel object</param>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>       
+        public bool ValidateConfirmDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, IItemRepository _itemRepository, out string message)
         {
             message = "";
-            Item item = _itemRepository.Find(x => x.Id == deliveryOrderDetail.ItemId);
+            Item item = _itemRepository.Find(x => x.Id == deliveryOrderDetail.ItemId && !x.IsDeleted);
             if (item == null)
             {
                 message = "Item can't be found";
@@ -1070,17 +1276,31 @@ namespace StockControl.Service
             }
             if ((item.PendingReceival - deliveryOrderDetail.Quantity) < 0)
             {
-                message = "Can't unconfirm. Not enough amount in stock Pending Receival...";
+                message = "Can't confirm. Not enough amount in stock Pending Receival...";
                 return false;
             }
             if ((item.Ready - deliveryOrderDetail.Quantity) < 0)
             {
-                message = "Can't unconfirm. Not enough amount in stock ready...";
+                message = "Can't confirm. Not enough amount in stock ready...";
                 return false;
             }
 
             return true;
         }
+
+        /// <summary>
+        /// Validate delivery order detail when it is unconfirmed
+        /// </summary>
+        /// <param name="deliveryOrderDetail"></param>
+        /// <param name="_itemRepository"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public bool ValidateUnconfirmDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, IItemRepository _itemRepository, out string message)
+        {
+            message = "";
+            return true;
+        }
+        
 
     }
 }

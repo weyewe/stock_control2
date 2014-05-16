@@ -10,6 +10,10 @@ namespace StockControl.Repository
     public class StockMutationRepository : EfRepository<StockMutation>, IStockMutationRepository
     {
 
+        /*
+         * GET
+         */
+
         /// <summary>
         /// Get all stock mutations from Database.
         /// </summary>
@@ -19,23 +23,23 @@ namespace StockControl.Repository
              using (var db = GetContext())
             {
                 IQueryable<StockMutationModel> sm = (from c in db.StockMutations
-                                               where c.IsDeleted == false
-                                               select new StockMutationModel
-                                               {
-                                                   Id = c.Id,
-                                                   ItemId = c.ItemId,
-                                                   Quantity = c.Quantity,
-                                                   MutationCase = c.MutationCase,
-                                                   ItemCase = c.ItemCase,
-                                                   SourceDocumentId = c.ItemCase,
-                                                   SourceDocument = c.SourceDocument,
-                                                   SourceDocumentDetailId = c.SourceDocumentDetailId,
-                                                   SourceDocumentDetail = c.SourceDocumentDetail,
-                                                   IsDeleted = c.IsDeleted,
-                                                   CreatedAt = c.CreatedAt,
-                                                   UpdatedAt = c.UpdatedAt,
-                                                   DeletedAt = c.DeletedAt
-                                               }).AsQueryable();
+                                                       where !c.IsDeleted
+                                                       select new StockMutationModel
+                                                       {
+                                                           Id = c.Id,
+                                                           ItemId = c.ItemId,
+                                                           Quantity = c.Quantity,
+                                                           MutationCase = c.MutationCase,
+                                                           ItemCase = c.ItemCase,
+                                                           SourceDocumentId = c.ItemCase,
+                                                           SourceDocument = c.SourceDocument,
+                                                           SourceDocumentDetailId = c.SourceDocumentDetailId,
+                                                           SourceDocumentDetail = c.SourceDocumentDetail,
+                                                           IsDeleted = c.IsDeleted,
+                                                           CreatedAt = c.CreatedAt,
+                                                           UpdatedAt = c.UpdatedAt,
+                                                           DeletedAt = c.DeletedAt
+                                                       }).AsQueryable();
 
                 return sm.ToList();
             }
@@ -51,9 +55,15 @@ namespace StockControl.Repository
         {
             IQueryable<StockMutation> sm = FindAll(x => x.ItemId == item.Sku && !x.IsDeleted);
             return sm.ToList();
-
         }
 
+        /// <summary>
+        /// Get all stock mutations given the source document
+        /// </summary>
+        /// <param name="item">An object Item</param>
+        /// <param name="sourceDocument">Source Document: Purchase Order, Purchase Receival, Sales Order, or Delivery Order</param>
+        /// <param name="sourceDocumentId">Id of the corresponding source document</param>
+        /// <returns>All stock mutations for the given source document</returns>
         public List<StockMutation> GetStockMutationBySourceDocument (ItemModel item, string sourceDocument, int sourceDocumentId)
         {
             IQueryable<StockMutation> sm = FindAll(x => x.ItemId == item.Sku && !x.IsDeleted &&
@@ -61,6 +71,14 @@ namespace StockControl.Repository
             return sm.ToList();
         }
 
+        /// <summary>
+        /// Get all stock mutations given the source document detail
+        /// </summary>
+        /// <param name="item">An object Item</param>
+        /// <param name="sourceDocumentDetail">Source Document Detail: Purchase Order Detail, Purchase Receival Detail,
+        /// Sales Order, or Delivery Order</param>
+        /// <param name="sourceDocumentDetailId">Id of the corresponding source document detail</param>
+        /// <returns>All stock mutations for the given source document detail</returns>
         public List<StockMutation> GetStockMutationBySourceDocumentDetail (ItemModel item, string sourceDocumentDetail, int sourceDocumentDetailId)
         {
             IQueryable<StockMutation> sm = FindAll(x => x.ItemId == item.Sku && !x.IsDeleted &&
@@ -68,11 +86,15 @@ namespace StockControl.Repository
             return sm.ToList();
         }
 
+        /*
+         * CREATE
+         */
+
         /// <summary>
         /// Create a new stockMutation.
         /// </summary>
         /// <param name="stockMutation">An object StockMutation</param>
-        /// <returns>The new stockMutation</returns>
+        /// <returns>The new stock mutation</returns>
         public StockMutation CreateStockMutation(StockMutation stockMutation)
         {
             StockMutation newstockMutation = new StockMutation();
@@ -92,6 +114,28 @@ namespace StockControl.Repository
             return Create(newstockMutation);
         }
 
+        /* 
+         * DELETE
+         */
+        /// <summary>
+        /// Delete a certain stock mutation
+        /// </summary>
+        /// <param name="id">Id of the stock mutation</param>
+        public void DeleteStockMutation(int id)
+        {
+            StockMutation sm = Find(x => x.Id == id && !x.IsDeleted);
+            if (sm != null)
+            {
+                sm.IsDeleted = true;
+                sm.DeletedAt = DateTime.Now;
+                Update(sm);
+            }
+        }
+
+        /*
+         * UPDATE
+         */
+
         /// <summary>
         /// Update a stock mutation.
         /// </summary>
@@ -99,7 +143,7 @@ namespace StockControl.Repository
         /// <returns>The updated stock mutation</returns>
         public StockMutation UpdateStockMutation(StockMutation stockMutation)
         {
-            StockMutation s = Find(x => x.Id == stockMutation.Id && x.IsDeleted == false);
+            StockMutation s = Find(x => x.Id == stockMutation.Id && !x.IsDeleted);
             if (s != null)
             {
                 s.Id = stockMutation.Id;

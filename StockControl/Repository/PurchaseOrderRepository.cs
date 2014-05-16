@@ -10,6 +10,10 @@ namespace StockControl.Repository
     public class PurchaseOrderRepository : EfRepository<PurchaseOrder>, IPurchaseOrderRepository
     {
 
+        /*
+         * GET
+         */
+
         /// <summary>
         /// Get all purchase orders from Database.
         /// </summary>
@@ -19,7 +23,7 @@ namespace StockControl.Repository
              using (var db = GetContext())
             {
                 IQueryable<PurchaseOrderModel> pom = (from p in db.PurchaseOrders
-                                               where p.IsDeleted == false
+                                               where !p.IsDeleted
                                                select new PurchaseOrderModel
                                                {
                                                    Id = p.Id,
@@ -38,15 +42,16 @@ namespace StockControl.Repository
         }
 
         /// <summary>
-        /// Get all purchase orders from Database.
+        /// Get one purchase order from Database.
         /// </summary>
-        /// <returns>All purchase orders</returns>
+        /// <param name="Id">Id of the purchase order</param>
+        /// <returns>A purchase order</returns>
         public PurchaseOrderModel GetPurchaseOrder(int Id)
         {
             using (var db = GetContext())
             {
                 PurchaseOrderModel pom = (from p in db.PurchaseOrders
-                                            where p.IsDeleted == false && p.Id == Id
+                                            where !p.IsDeleted && p.Id == Id
                                             select new PurchaseOrderModel
                                             {
                                                 Id = p.Id,
@@ -64,13 +69,17 @@ namespace StockControl.Repository
             }
         }
 
-
+        /// <summary>
+        /// Get one purchase order from Database.
+        /// </summary>
+        /// <param name="contactId">Id of the contact</param>
+        /// <returns>A purchase order</returns>
         public List<PurchaseOrderModel> GetPurchaseOrderByContactId(int contactId)
         {
             using (var db = GetContext())
             {
                 IQueryable<PurchaseOrderModel> pom = (from p in db.PurchaseOrders
-                                                      where p.IsDeleted == false && p.ContactId == contactId
+                                                      where !p.IsDeleted == false && p.ContactId == contactId
                                                       select new PurchaseOrderModel
                                                       {
                                                           Id = p.Id,
@@ -87,6 +96,10 @@ namespace StockControl.Repository
                 return pom.ToList();
             }
         }
+
+        /*
+         * CREATE
+         */
 
         /// <summary>
         /// Create a new purchase order.
@@ -108,13 +121,17 @@ namespace StockControl.Repository
             return Create(newPurchaseOrder);
         }
 
+        /*
+         * DELETE
+         */
+
         /// <summary>
         /// Delete a certain purchase order
         /// </summary>
         /// <param name="id">PurchaseOrder Id</param>
         public void DeletePurchaseOrder(int id)
         {
-            PurchaseOrder p = Find(x => x.Id == id && x.IsDeleted == false);
+            PurchaseOrder p = Find(x => x.Id == id && !x.IsDeleted);
             if (p != null)
             {
                 p.IsDeleted = true;
@@ -123,6 +140,10 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * UPDATE
+         */
+
         /// <summary>
         /// Update a purchase order.
         /// </summary>
@@ -130,7 +151,7 @@ namespace StockControl.Repository
         /// <returns>The updated purchase order</returns>
         public PurchaseOrder UpdatePurchaseOrder(PurchaseOrder purchaseOrder)
         {
-            PurchaseOrder p = Find(x => x.Id == purchaseOrder.Id && x.IsDeleted == false);
+            PurchaseOrder p = Find(x => x.Id == purchaseOrder.Id && !x.IsDeleted);
             if (p != null)
             {
                 p.Id = purchaseOrder.Id;
@@ -149,16 +170,21 @@ namespace StockControl.Repository
             return p;
         }
 
+        /*
+         * GET DETAIL
+         */
+
         /// <summary>
-        /// Get all purchaseOrderDetail order details from Database.
+        /// Get all purchase order details from Database.
         /// </summary>
-        /// <returns>All purchaseOrderDetail order details</returns>
-        public List<PurchaseOrderDetailModel> GetPurchaseOrderDetailList(int purchaseOrderDetailOrderId)
+        /// <param name="purchaseOrderId">Id of the parent purchase order</param>
+        /// <returns>All purchase order details belonging to the parent purchase order</returns>
+        public List<PurchaseOrderDetailModel> GetPurchaseOrderDetailList(int purchaseOrderId)
         {
             using (var db = GetContext())
             {
                 IQueryable<PurchaseOrderDetailModel> podm = (from pod in db.PurchaseOrderDetails
-                                                             join p in db.PurchaseOrders on pod.PurchaseOrderId equals p.Id
+                                                             where !pod.IsDeleted && pod.PurchaseOrderId == purchaseOrderId 
                                                              select new PurchaseOrderDetailModel
                                                              {
                                                                  Id = pod.Id,
@@ -180,16 +206,16 @@ namespace StockControl.Repository
         }
 
         /// <summary>
-        /// Get specific purchaseOrderDetail order details from Database.
+        /// Get specific purchase order detail from Database.
         /// </summary>
-        /// <param name="purchaseOrderDetailId">PurchaseOrderDetail Id</param>
-        /// <returns>A purchaseOrderDetail order detail</returns>
+        /// <param name="purchaseOrderDetailId">Id of the purchase order detail</param>
+        /// <returns>A purchase order detail</returns>
         public PurchaseOrderDetailModel GetPurchaseOrderDetail(int purchaseOrderDetailId)
         {
             using (var db = GetContext())
             {
                 PurchaseOrderDetailModel podm = (from pod in db.PurchaseOrderDetails
-                                                 where pod.Id == purchaseOrderDetailId
+                                                 where pod.Id == purchaseOrderDetailId && !pod.IsDeleted
                                                  select new PurchaseOrderDetailModel
                                                  {
                                                      Id = pod.Id,
@@ -210,8 +236,12 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * CREATE DETAIL
+         */
+
         /// <summary>
-        /// Create a new purchaseOrderDetail order detail.
+        /// Create a new purchase order detail.
         /// </summary>
         /// <param name="purchaseOrderDetail">An object PurchaseOrderDetail</param>
         /// <returns>The new purchaseOrderDetail order detail</returns>
@@ -242,15 +272,21 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * DELETE DETAIL
+         */
+
         /// <summary>
-        /// Delete a certain purchaseOrderDetail order detail
+        /// Delete a certain purchase order detail
         /// </summary>
         /// <param name="purchaseOrderDetailId">PurchaseOrderDetail Id</param>
         public void DeletePurchaseOrderDetail(int purchaseOrderDetailId)
         {
             using (var db = GetContext())
             {
-                PurchaseOrderDetail pod = (from p in db.PurchaseOrderDetails where p.Id == purchaseOrderDetailId select p).FirstOrDefault();
+                PurchaseOrderDetail pod = (from p in db.PurchaseOrderDetails
+                                           where p.Id == purchaseOrderDetailId && !p.IsDeleted
+                                           select p).FirstOrDefault();
                 if (pod != null)
                 {
                     pod.IsDeleted = true;
@@ -262,14 +298,16 @@ namespace StockControl.Repository
         }
 
         /// <summary>
-        /// Delete purchaseOrderDetail order details that connects to the parent PurchaseOrder 
+        /// Delete purchase order details that connects to the parent purchase order 
         /// </summary>
-        /// <param name="purchaseOrderDetailOrderId">Id of the parent PurchaseOrder</param>
-        public void DeletePurchaseOrderDetailByPurchaseOrderId(int purchaseOrderDetailOrderId)
+        /// <param name="purchaseOrderId">Id of the parent purchase order</param>
+        public void DeletePurchaseOrderDetailByPurchaseOrderId(int purchaseOrderId)
         {
             using (var db = GetContext())
             {
-                List<PurchaseOrderDetail> pod = (from p in db.PurchaseOrderDetails where p.PurchaseOrderId == purchaseOrderDetailOrderId select p).ToList();
+                List<PurchaseOrderDetail> pod = (from p in db.PurchaseOrderDetails
+                                                 where p.PurchaseOrderId == purchaseOrderId && !p.IsDeleted
+                                                 select p).ToList();
 
                 if (pod != null)
                 {
@@ -288,16 +326,22 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * UPDATE DETAIL
+         */
+
         /// <summary>
-        /// Update a purchaseOrderDetail order detail.
+        /// Update a purchase order detail.
         /// </summary>
         /// <param name="purchaseOrderDetail">An object PurchaseOrderDetail</param>
-        /// <returns>The updated purchaseOrderDetail order detail</returns>
+        /// <returns>The updated purchase order detail</returns>
         public PurchaseOrderDetail UpdatePurchaseOrderDetail(PurchaseOrderDetail purchaseOrderDetail)
         {
             using (var db = GetContext())
             {
-                PurchaseOrderDetail pod = (from d in db.PurchaseOrderDetails where d.Id == purchaseOrderDetail.Id select d).FirstOrDefault();
+                PurchaseOrderDetail pod = (from d in db.PurchaseOrderDetails
+                                           where d.Id == purchaseOrderDetail.Id && !d.IsDeleted
+                                           select d).FirstOrDefault();
                 if (pod != null)
                 {
                     pod.Id = purchaseOrderDetail.Id;
@@ -316,6 +360,38 @@ namespace StockControl.Repository
                     db.SaveChanges();
                 }
                 return pod;
+            }
+        }
+
+        /// <summary>
+        /// Update confirmation of all purchase order details that connects to the parent PurchaseOrder 
+        /// </summary>
+        /// <param name="purchaseOrderId">Id of the parent purchase order</param>
+        /// <param name="IsConfirmed">Setter for the Confirm / Unconfirm parameter</param>
+        public void UpdateConfirmationPurchaseOrderDetailByPurchaseOrderId(int purchaseOrderId, bool IsConfirmed)
+        {
+            using (var db = GetContext())
+            {
+                List<PurchaseOrderDetail> dod = (from d in db.PurchaseOrderDetails
+                                                 where d.PurchaseOrderId == purchaseOrderId && !d.IsDeleted
+                                                 select d).ToList();
+
+                if (dod != null)
+                {
+                    foreach (var eachdetail in dod)
+                    {
+                        var updatedod = (from d in db.PurchaseOrderDetails
+                                         where d.Id == eachdetail.Id && !d.IsDeleted
+                                         select d).FirstOrDefault();
+                        if (updatedod != null)
+                        {
+                            updatedod.IsConfirmed = IsConfirmed;
+                            updatedod.UpdatedAt = DateTime.Now;
+
+                            db.SaveChanges();
+                        }
+                    }
+                }
             }
         }
 

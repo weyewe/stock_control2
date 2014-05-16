@@ -12,10 +12,15 @@ namespace StockControl.Service
     {
         private readonly static log4net.ILog LOG = log4net.LogManager.GetLogger("StockMutationService");
 
+        /*
+         * GET
+         */
+
         /// <summary>
         /// Get all stock mutations.
         /// </summary>
-        /// <returns></returns>
+        /// <param name="_stockMutationRepository">IStockMutationRepository object</param>
+        /// <returns>all stock mutations</returns>
         public List<StockMutationModel> GetStockMutationList(IStockMutationRepository _stockMutationRepository)
         {
             List<StockMutationModel> model = new List<StockMutationModel>();
@@ -32,10 +37,11 @@ namespace StockControl.Service
         }
 
         /// <summary>
-        /// Get all stock mutations.
+        /// Get stock mutations associated to an item.
         /// </summary>
-        /// <returns></returns>
-        /// 
+        /// <param name="item">ItemModel object</param>
+        /// <param name="_stockMutationRepository">IStockMutationRepository object</param>
+        /// <returns>all stock mutations associated to an item</returns>
         public List<StockMutationModel> GetStockMutationByItem(ItemModel item, IStockMutationRepository _stockMutationRepository)
         {
             List<StockMutationModel> models = new List<StockMutationModel>();
@@ -64,12 +70,20 @@ namespace StockControl.Service
             }
             catch (Exception ex)
             {
-                LOG.Error("GetStockMutationList Failed", ex);
+                LOG.Error("GetStockMutationByItem Failed", ex);
             }
 
             return models;
         }
 
+        /// <summary>
+        /// Get stock mutations by source document.
+        /// </summary>
+        /// <param name="item">ItemModel object</param>
+        /// <param name="sourceDocument">Source Document: Purchase Order, Purchase Receival, Sales Order, or Delivery Order</param>
+        /// <param name="sourceDocumentId">Id of the corresponding source document</param>        
+        /// <param name="_stockMutationRepository">IStockMutationRepository object</param>
+        /// <returns>stock mutations by source document</returns>
         public List<StockMutationModel> GetStockMutationBySourceDocument(ItemModel item, string sourceDocument, int sourceDocumentId, IStockMutationRepository _stockMutationRepository)
         {
             List<StockMutationModel> models = new List<StockMutationModel>();
@@ -99,12 +113,21 @@ namespace StockControl.Service
             }
             catch (Exception ex)
             {
-                LOG.Error("GetStockMutationList Failed", ex);
+                LOG.Error("GetStockMutationBySourceDocument Failed", ex);
             }
 
             return models;
         }
 
+        /// <summary>
+        /// Get stock mutations by source document detail.
+        /// </summary>
+        /// <param name="item">ItemModel object</param>
+        /// <param name="sourceDocumentDetail">Source Document Detail: Purchase Order Detail, Purchase Receival Detail,
+        /// Sales Order, or Delivery Order</param>
+        /// <param name="sourceDocumentDetailId">Id of the corresponding source document detail</param>
+        /// <param name="_stockMutationRepository">IStockMutationRepository object</param>
+        /// <returns>stock mutations by source document detail</returns>
         public List<StockMutationModel> GetStockMutationBySourceDocumentDetail(ItemModel item, string sourceDocumentDetail, int sourceDocumentDetailId, IStockMutationRepository _stockMutationRepository)
         {
             List<StockMutationModel> models = new List<StockMutationModel>();
@@ -134,13 +157,22 @@ namespace StockControl.Service
             }
             catch (Exception ex)
             {
-                LOG.Error("GetStockMutationList Failed", ex);
+                LOG.Error("GetStockMutationBySourceDocumentDetail Failed", ex);
             }
 
             return models;
         }
 
-        // Create StockMutation
+        /*
+         * CREATE
+         */
+
+        /// <summary>
+        /// Create stock mutation.
+        /// </summary>
+        /// <param name="stockMutation">StockMutationModel object</param>
+        /// <param name="_stockMutationRepository">IStockMutationRepository object</param>
+        /// <returns>a response model</returns>
         public ResponseModel CreateStockMutation(StockMutationModel stockMutation, IStockMutationRepository _stockMutationRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -208,7 +240,16 @@ namespace StockControl.Service
             return respModel;
         }
 
-        // Update StockMutation
+        /*
+         * UPDATE
+         */
+
+        /// <summary>
+        /// Update a stock mutation.
+        /// </summary>
+        /// <param name="stockMutation">StockMutationModel object</param>
+        /// <param name="_stockMutationRepository">IStockRepository object</param>
+        /// <returns>a response model</returns>
         public ResponseModel UpdateStockMutation(StockMutationModel stockMutation, IStockMutationRepository _stockMutationRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -225,7 +266,7 @@ namespace StockControl.Service
                     return respModel;
                 }
 
-                StockMutation updateStockMutation = _stockMutationRepository.Find(p => p.Id == stockMutation.Id);
+                StockMutation updateStockMutation = _stockMutationRepository.Find(p => p.Id == stockMutation.Id && !p.IsDeleted);
                 if (updateStockMutation != null)
                 {
                     updateStockMutation.Id = stockMutation.Id;
@@ -245,7 +286,7 @@ namespace StockControl.Service
                     _stockMutationRepository.UpdateStockMutation(updateStockMutation);
 
                     respModel.isValid = true;
-                    respModel.message = "Update Data Success...";
+                    respModel.message = "Update stock mutation Success...";
                     respModel.objResult = stockMutation;
 
                     LOG.Info("UpdateStockMutation Success");
@@ -271,26 +312,36 @@ namespace StockControl.Service
 
                 LOG.Error("UpdateStockMutation Failed", dbEx);
                 respModel.isValid = false;
-                respModel.message = "Update data failed, Please try again or stockMutation your administrator.";
+                respModel.message = "Update stock mutation failed, Please try again or stockMutation your administrator.";
             }
             catch (Exception ex)
             {
                 LOG.Error("UpdateStockMutation Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Update data Failed, Please try again or stockMutation your administrator.";
+                respModel.message = "Update stock mutation Failed, Please try again or stockMutation your administrator.";
             }
 
             return respModel;
         }
 
+        /*
+         * VALIDATE
+         */
+
+        /// <summary>
+        /// Validate a stock mutation when it is created.
+        /// It is valid when the following items are present:
+        /// Id, ItemId, Quantity, MutationCase, ItemCase, SourceDocumentId, SourceDocument,
+        /// SourceDocumentDetailId, SourceDocumentDetail.
+        /// </summary>
+        /// <param name="model">StockMutationModel object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateCreate(StockMutationModel model, out string message)
         {
             bool isValid = true;
             message = "OK";
 
-            /* Id, ItemId, Quantity, MutationCase, ItemCase, SourceDocumentId, SourceDocument,
-             * SourceDocumentDetailId, SourceDocumentDetail must be present
-             */
 
             if (String.IsNullOrEmpty(model.ItemId) || model.ItemId.Trim() == "")
             {
@@ -298,26 +349,26 @@ namespace StockControl.Service
                 return false;
             }
 
-            // These value will never be null
-            /*
             if (model.Quantity == null || model.SourceDocumentId == null || model.SourceDocumentDetailId == null)
             {
                 message = "Invalid input data...";
                 return false;
             }
-            */
+            // MutationCase 1 means an addition (+)
+            // MutationCase 2 means a reduction (-)
             if (model.MutationCase != 1 && model.MutationCase != 2)
             {
                 message = "Invalid input data...";
                 return false;
             }
-
+            // ItemCase 1 means Ready
+            // ItemCase 2 means PendingReceival
+            // ItemCase 3 means PendingDelivery
             if (model.ItemCase != 1 && model.ItemCase != 2 && model.ItemCase != 3)
             {
                 message = "Invalid input data...";
                 return false;
             }
-
             if (!(model.SourceDocument.Equals("PurchaseOrder") ||
                     model.SourceDocument.Equals("PurchaseReceival") ||
                     model.SourceDocument.Equals("SalesOrder") ||
@@ -326,7 +377,6 @@ namespace StockControl.Service
                 message = "Invalid Source Document " + model.SourceDocument + "...";
                 return false;
             }
-
             if (!(model.SourceDocumentDetail.Equals("PurchaseOrderDetail") ||
                     model.SourceDocumentDetail.Equals("PurchaseReceivalDetail") ||
                     model.SourceDocumentDetail.Equals("SalesOrderDetail") ||
@@ -339,6 +389,12 @@ namespace StockControl.Service
             return isValid;
         }
 
+        /// <summary>
+        /// Validate a stock mutation when it is updated.
+        /// </summary>
+        /// <param name="model">StockMutationModel object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateUpdate(StockMutationModel model, out string message)
         {
             bool isValid = ValidateCreate(model, out message);

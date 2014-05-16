@@ -10,13 +10,17 @@ namespace StockControl.Service
 {
     public class ItemService : IItemService
     {
-
         private readonly static log4net.ILog LOG = log4net.LogManager.GetLogger("ItemService");
+
+        /*
+         * GET
+         */
 
         /// <summary>
         /// Get all items.
         /// </summary>
-        /// <returns></returns>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <returns>all items</returns>
         public List<ItemModel> GetItemList(IItemRepository _itemRepository)
         {
             List<ItemModel> model = new List<ItemModel>();
@@ -36,8 +40,8 @@ namespace StockControl.Service
         /// Get an item.
         /// </summary>
         /// <param name="Id">Id of the item</param>
-        /// <param name="_itemRepository">Passed on parameter</param>
-        /// <returns>An item.</returns>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <returns>an item</returns>
         public ItemModel GetItem(int Id, IItemRepository _itemRepository)
         {
             ItemModel model = new ItemModel();
@@ -53,7 +57,16 @@ namespace StockControl.Service
             return model;
         }
 
-        // Create Item
+        /*
+         * CREATE
+         */
+
+        /// <summary>
+        /// Create an item.
+        /// </summary>
+        /// <param name="item">ItemModel object</param>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <returns>A response model</returns>
         public ResponseModel CreateItem(ItemModel item, IItemRepository _itemRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -118,7 +131,17 @@ namespace StockControl.Service
             return respModel;
         }
 
-        // Delete Item
+        /*
+         * DELETE
+         */
+
+        /// <summary>
+        /// Delete an item.
+        /// </summary>
+        /// <param name="itemId">Id of the item</param>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <param name="_stockMutationRepository">IStockMutation object</param>
+        /// <returns>A response model</returns>
         public ResponseModel DeleteItem(int itemId, IItemRepository _itemRepository, IStockMutationRepository _stockMutationRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -128,7 +151,7 @@ namespace StockControl.Service
             try
             {
                 string message = "";
-                Item deleteItem = _itemRepository.Find(p => p.Id == itemId);
+                Item deleteItem = _itemRepository.Find(p => p.Id == itemId && !p.IsDeleted);
                 if (deleteItem != null)
                 {
                     ItemModel model = ItemModel.ToModel(deleteItem);
@@ -173,7 +196,16 @@ namespace StockControl.Service
             return respModel;
         }
 
-        // Update Item
+        /*
+         * UPDATE
+         */
+
+        /// <summary>
+        /// Update an item.
+        /// </summary>
+        /// <param name="item">ItemModel object</param>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <returns>A response model</returns>
         public ResponseModel UpdateItem(ItemModel item, IItemRepository _itemRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -245,19 +277,29 @@ namespace StockControl.Service
             return respModel;
         }
 
-        public bool Validate(ItemModel model, IItemRepository _itemRepository, out string message)
+        /*
+         * VALIDATE
+         */
+
+        /// <summary>
+        /// Validate an item. For an item to be valid, a name must be present and
+        /// its Sku (Stock keeping unit) must be present and unique among non-deleted item.
+        /// </summary>
+        /// <param name="model">ContactModel object</param>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
+        private bool Validate(ItemModel model, IItemRepository _itemRepository, out string message)
         {
             bool isValid = true;
             message = "OK";
-
-            // Name must be present
+            
             if (String.IsNullOrEmpty(model.Name) || model.Name.Trim() == "")
             {
                 message = "Invalid Name...";
                 return false;
             }
-            // Sku must be present and unique among non-deleted item
-            if(_itemRepository.getDuplicateSku(model) != null)
+            if(_itemRepository.GetDuplicateSku(model) != null)
             {
                 message = "Duplicate Sku " + model.Sku + "...";
                 return false;
@@ -265,8 +307,14 @@ namespace StockControl.Service
             return isValid;
         }
 
-        // Name must be present
-        // Sku must be present and unique among non-deleted item
+        /// <summary>
+        /// Validate an item when it is created / updated.
+        /// Calls private function Validate (ItemModel, IItemRepository, out string). 
+        /// </summary>
+        /// <param name="model">ItemModel object</param>
+        /// <param name="_itemRepository">IItemRepository object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateCreateUpdate(ItemModel model, IItemRepository _itemRepository, out string message)
         {
             bool isValid = this.Validate(model, _itemRepository, out message);
@@ -274,7 +322,14 @@ namespace StockControl.Service
             return isValid;
         }
 
-        // Item has any StockMutation associated to it
+        /// <summary>
+        /// Validate an item when it is deleted.
+        /// An item can't be deleted if it is associated to any stock mutation(s).
+        /// </summary>
+        /// <param name="model">ItemModel object</param>
+        /// <param name="_stockMutationRepository">IIStockMutationRepository object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateDelete(ItemModel model, IStockMutationRepository _stockMutationRepository, out string message)
         {
             
@@ -283,7 +338,7 @@ namespace StockControl.Service
 
             if (_stockMutationRepository.GetStockMutationByItem(model).Count() > 0)
             {
-                    message = "This item has stock mutations association ...";
+                    message = "This item has stock mutations associated to the item ...";
                     isValid = false;
                     return isValid;
             }

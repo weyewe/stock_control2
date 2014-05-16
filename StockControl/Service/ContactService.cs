@@ -12,9 +12,14 @@ namespace StockControl.Service
     {
         private readonly static log4net.ILog LOG = log4net.LogManager.GetLogger("ContactService");
 
+        /*
+         * GET
+         */
+
         /// <summary>
         /// Get all contacts.
         /// </summary>
+        /// <param name="_contactRepository">IContactRepository object</param>
         /// <returns></returns>
         public List<ContactModel> GetContactList(IContactRepository _contactRepository)
         {
@@ -32,10 +37,10 @@ namespace StockControl.Service
         }
 
         /// <summary>
-        /// Get all a contact.
+        /// Get a contact.
         /// </summary>
         /// <param name="Id">Id of the contact</param>
-        /// <param name="_contactRepository">Passed on parameter</param>
+        /// <param name="_contactRepository">IContactRepository object</param>
         /// <returns>A contact</returns>
         public ContactModel GetContact(int Id, IContactRepository _contactRepository)
         {
@@ -52,7 +57,16 @@ namespace StockControl.Service
             return model;
         }
 
-        // Create Contact
+        /*
+         * CREATE
+         */
+
+        /// <summary>
+        /// Create a new contact
+        /// </summary>
+        /// <param name="contact">ContactModel object</param>
+        /// <param name="_contactRepository">IContactRepository object</param>
+        /// <returns>A response model</returns>
         public ResponseModel CreateContact(ContactModel contact, IContactRepository _contactRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -114,7 +128,20 @@ namespace StockControl.Service
             return respModel;
         }
 
-        // Delete Contact
+        /*
+         * DELETE
+         */
+
+        /// <summary>
+        /// Delete a contact.
+        /// </summary>
+        /// <param name="contactId">Id of the contact</param>
+        /// <param name="_contactRepository">IContactRepository object</param>
+        /// <param name="_po">IPurchaseOrder object</param>
+        /// <param name="_pr">IPurchaseReceival object</param>
+        /// <param name="_so">ISalesOrder object</param>
+        /// <param name="_do">IDeliveryOrder object</param>
+        /// <returns>A response model</returns>
         public ResponseModel DeleteContact(int contactId, IContactRepository _contactRepository, IPurchaseOrderRepository _po, IPurchaseReceivalRepository _pr,
                                      ISalesOrderRepository _so, IDeliveryOrderRepository _do)
         {
@@ -124,7 +151,7 @@ namespace StockControl.Service
             respModel.objResult = null;
             try
             {
-                Contact deleteContact = _contactRepository.Find(p => p.Id == contactId);
+                Contact deleteContact = _contactRepository.Find(p => p.Id == contactId && !p.IsDeleted);
                 if (deleteContact != null)
                 {
                     string message = "";
@@ -170,7 +197,16 @@ namespace StockControl.Service
             return respModel;
         }
 
-        // Update Contact
+        /*
+         * UPDATE
+         */
+
+        /// <summary>
+        /// Update a contact.
+        /// </summary>
+        /// <param name="contact">ContactModel object</param>
+        /// <param name="_contactRepository">IContactRepository object</param>
+        /// <returns>A response model</returns>
         public ResponseModel UpdateContact(ContactModel contact, IContactRepository _contactRepository)
         {
             ResponseModel respModel = new ResponseModel();
@@ -187,7 +223,7 @@ namespace StockControl.Service
                     return respModel;
                 }
 
-                Contact updateContact = _contactRepository.Find(p => p.Id == contact.Id);
+                Contact updateContact = _contactRepository.Find(p => p.Id == contact.Id && !p.IsDeleted);
                 if (updateContact != null)
                 {
                     updateContact.Id = contact.Id;
@@ -227,18 +263,28 @@ namespace StockControl.Service
 
                 LOG.Error("UpdateContact Failed", dbEx);
                 respModel.isValid = false;
-                respModel.message = "Update data failed, Please try again or contact your administrator.";
+                respModel.message = "Update contact failed, Please try again or contact your administrator.";
             }
             catch (Exception ex)
             {
                 LOG.Error("UpdateContact Failed", ex);
                 respModel.isValid = false;
-                respModel.message = "Update data Failed, Please try again or contact your administrator.";
+                respModel.message = "Update contact failed, Please try again or contact your administrator.";
             }
 
             return respModel;
         }
 
+        /*
+         * Validate
+         */
+
+        /// <summary>
+        /// Validate a contact. The name must not be empty.
+        /// </summary>
+        /// <param name="model">ContactModel object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         private bool Validate(ContactModel model, out string message)
         {
             bool isValid = true;
@@ -254,6 +300,12 @@ namespace StockControl.Service
             return isValid;
         }
 
+        /// <summary>
+        /// Validate a contact when it is created / updated.
+        /// </summary>
+        /// <param name="model">ContactModel object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateCreateUpdate(ContactModel model, out string message)
         {
             bool isValid = this.Validate(model, out message);
@@ -261,8 +313,17 @@ namespace StockControl.Service
             return isValid;
         }
 
-        // Can't be destroyed if there is PurchaseOrder, PurchaseReceival, SalesOrder,
-        // DeliveryOrder associated with the given contact.
+        /// <summary>
+        /// Validate a contact when it is deleted. A contact can't be deleted if the name is invalid, or
+        /// if there is PurchaseOrder, PurchaseReceival, SalesOrder, DeliveryOrder associated to the contact.
+        /// </summary>
+        /// <param name="model">ContactModel object</param>
+        /// <param name="_po">IPurchaseOrderRepository object</param>
+        /// <param name="_pr">IPurchaseReceivalRepository object</param>
+        /// <param name="_so">ISalesOrderRepository object</param>
+        /// <param name="_do">IDeliveryOrder object</param>
+        /// <param name="message">Message</param>
+        /// <returns>true or false</returns>
         public bool ValidateDelete(ContactModel model, IPurchaseOrderRepository _po, IPurchaseReceivalRepository _pr,
                                      ISalesOrderRepository _so, IDeliveryOrderRepository _do, out string message)
         {
@@ -295,11 +356,6 @@ namespace StockControl.Service
             }
 
             return isValid;
-        }
-
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
         }
     }
 }

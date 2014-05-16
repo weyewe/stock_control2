@@ -14,6 +14,7 @@ namespace StockControl.Repository
         List<StockMutation> GetStockMutationBySourceDocumentDetail(ItemModel item, string sourceDocumentDetail, int sourceDocumentDetailId);
 
         StockMutation CreateStockMutation(StockMutation stockMutation);
+        void DeleteStockMutation(int id);
         StockMutation UpdateStockMutation(StockMutation stockMutation);
     }
 }

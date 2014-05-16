@@ -10,6 +10,10 @@ namespace StockControl.Repository
     public class PurchaseReceivalRepository : EfRepository<PurchaseReceival>, IPurchaseReceivalRepository
     {
 
+        /*
+         * GET
+         */
+
         /// <summary>
         /// Get all purchase receivals from Database.
         /// </summary>
@@ -19,19 +23,19 @@ namespace StockControl.Repository
              using (var db = GetContext())
             {
                 IQueryable<PurchaseReceivalModel> prm = (from p in db.PurchaseReceivals
-                                               where p.IsDeleted == false
-                                               select new PurchaseReceivalModel
-                                               {
-                                                   Id = p.Id,
-                                                   ContactId = p.ContactId,
-                                                   Code = p.Code,
-                                                   ReceivalDate = p.ReceivalDate,
-                                                   IsConfirmed = p.IsConfirmed,
-                                                   IsDeleted = p.IsDeleted,
-                                                   CreatedAt = p.CreatedAt,
-                                                   UpdatedAt = p.UpdatedAt,
-                                                   DeletedAt = p.DeletedAt
-                                               }).AsQueryable();
+                                                           where !p.IsDeleted
+                                                           select new PurchaseReceivalModel
+                                                           {
+                                                               Id = p.Id,
+                                                               ContactId = p.ContactId,
+                                                               Code = p.Code,
+                                                               ReceivalDate = p.ReceivalDate,
+                                                               IsConfirmed = p.IsConfirmed,
+                                                               IsDeleted = p.IsDeleted,
+                                                               CreatedAt = p.CreatedAt,
+                                                               UpdatedAt = p.UpdatedAt,
+                                                               DeletedAt = p.DeletedAt
+                                                           }).AsQueryable();
 
                 return prm.ToList();
             }
@@ -47,30 +51,35 @@ namespace StockControl.Repository
             using (var db = GetContext())
             {
                 PurchaseReceivalModel prm = (from p in db.PurchaseReceivals
-                                                         where p.IsDeleted == false && p.Id == Id
-                                                         select new PurchaseReceivalModel
-                                                         {
-                                                             Id = p.Id,
-                                                             ContactId = p.ContactId,
-                                                             Code = p.Code,
-                                                             ReceivalDate = p.ReceivalDate,
-                                                             IsConfirmed = p.IsConfirmed,
-                                                             IsDeleted = p.IsDeleted,
-                                                             CreatedAt = p.CreatedAt,
-                                                             UpdatedAt = p.UpdatedAt,
-                                                             DeletedAt = p.DeletedAt
-                                                         }).FirstOrDefault();
+                                                where !p.IsDeleted && p.Id == Id
+                                                select new PurchaseReceivalModel
+                                                {
+                                                    Id = p.Id,
+                                                    ContactId = p.ContactId,
+                                                    Code = p.Code,
+                                                    ReceivalDate = p.ReceivalDate,
+                                                    IsConfirmed = p.IsConfirmed,
+                                                    IsDeleted = p.IsDeleted,
+                                                    CreatedAt = p.CreatedAt,
+                                                    UpdatedAt = p.UpdatedAt,
+                                                    DeletedAt = p.DeletedAt
+                                                }).FirstOrDefault();
 
                 return prm;
             }
         }
 
+        /// <summary>
+        /// Get purchase receival from Database.
+        /// </summary>
+        /// <param name="contactId">Id of the contact</param>
+        /// <returns>A purchase receival</returns>
         public List<PurchaseReceivalModel> GetPurchaseReceivalByContactId(int contactId)
         {
             using (var db = GetContext())
             {
                 IQueryable<PurchaseReceivalModel> prm = (from p in db.PurchaseReceivals
-                                                         where p.IsDeleted == false && p.ContactId == contactId
+                                                         where !p.IsDeleted && p.ContactId == contactId
                                                          select new PurchaseReceivalModel
                                                          {
                                                              Id = p.Id,
@@ -87,6 +96,10 @@ namespace StockControl.Repository
                 return prm.ToList();
             }
         }
+
+        /*
+         * CREATE
+         */
 
         /// <summary>
         /// Create a new purchase receival.
@@ -108,13 +121,17 @@ namespace StockControl.Repository
             return Create(newPurchaseReceival);
         }
 
+        /*
+         * DELETE
+         */
+
         /// <summary>
         /// Delete a certain purchase receival
         /// </summary>
         /// <param name="id">PurchaseReceival Id</param>
         public void DeletePurchaseReceival(int id)
         {
-            PurchaseReceival p = Find(x => x.Id == id && x.IsDeleted == false);
+            PurchaseReceival p = Find(x => x.Id == id && !x.IsDeleted);
             if (p != null)
             {
                 p.IsDeleted = true;
@@ -123,6 +140,10 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * UPDATE
+         */
+
         /// <summary>
         /// Update a purchase receival.
         /// </summary>
@@ -130,7 +151,7 @@ namespace StockControl.Repository
         /// <returns>The updated purchase receival</returns>
         public PurchaseReceival UpdatePurchaseReceival(PurchaseReceival purchaseReceival)
         {
-            PurchaseReceival p = Find(x => x.Id == purchaseReceival.Id && x.IsDeleted == false);
+            PurchaseReceival p = Find(x => x.Id == purchaseReceival.Id && !x.IsDeleted);
             if (p != null)
             {
                 p.Id = purchaseReceival.Id;
@@ -149,70 +170,108 @@ namespace StockControl.Repository
             return p;
         }
 
+        /*
+         * GET DETAIL
+         */
+
         /// <summary>
-        /// Get all purchaseReceivalDetail order details from Database.
+        /// Get all purchase recevail details from Database.
         /// </summary>
-        /// <returns>All purchaseReceivalDetail order details</returns>
-        public List<PurchaseReceivalDetailModel> GetPurchaseReceivalDetailList(int purchaseReceivalDetailOrderId)
+        /// <param name="purchaseReceivalId">Id of the parent purchase receival</param>
+        /// <returns>All purchase receival details belonging to the parent purchase receival</returns>
+        public List<PurchaseReceivalDetailModel> GetPurchaseReceivalDetailList(int purchaseReceivalId)
         {
             using (var db = GetContext())
             {
                 IQueryable<PurchaseReceivalDetailModel> podm = (from pod in db.PurchaseReceivalDetails
-                                                             join p in db.PurchaseReceivals on pod.PurchaseReceivalId equals p.Id
-                                                             select new PurchaseReceivalDetailModel
-                                                             {
-                                                                 Id = pod.Id,
-                                                                 PurchaseReceivalId = pod.PurchaseReceivalId,
-                                                                 Code = pod.Code,
-                                                                 Quantity = pod.Quantity,
-                                                                 ItemId = pod.ItemId,
-                                                                 PurchaseOrderDetailId = pod.PurchaseOrderDetailId,
-                                                                 IsConfirmed = pod.IsConfirmed,
-                                                                 IsDeleted = pod.IsDeleted,
-                                                                 CreatedAt = pod.CreatedAt,
-                                                                 UpdatedAt = pod.UpdatedAt,
-                                                                 DeletedAt = pod.DeletedAt
-                                                             }).AsQueryable();
+                                                                 where !pod.IsDeleted && pod.PurchaseReceivalId == purchaseReceivalId
+                                                                 select new PurchaseReceivalDetailModel
+                                                                 {
+                                                                     Id = pod.Id,
+                                                                     PurchaseReceivalId = pod.PurchaseReceivalId,
+                                                                     Code = pod.Code,
+                                                                     Quantity = pod.Quantity,
+                                                                     ItemId = pod.ItemId,
+                                                                     PurchaseOrderDetailId = pod.PurchaseOrderDetailId,
+                                                                     IsConfirmed = pod.IsConfirmed,
+                                                                     IsDeleted = pod.IsDeleted,
+                                                                     CreatedAt = pod.CreatedAt,
+                                                                     UpdatedAt = pod.UpdatedAt,
+                                                                     DeletedAt = pod.DeletedAt
+                                                                 }).AsQueryable();
 
                 return podm.ToList();
             }
         }
 
         /// <summary>
-        /// Get specific purchaseReceivalDetail order details from Database.
+        /// Get specific purchase order detail from Database.
         /// </summary>
-        /// <param name="purchaseReceivalDetailId">PurchaseReceivalDetail Id</param>
-        /// <returns>A purchaseReceivalDetail order detail</returns>
+        /// <param name="purchaseReceivalDetailId">Id of the purchase receival detail</param>
+        /// <returns>A purchase receival detail</returns>
         public PurchaseReceivalDetailModel GetPurchaseReceivalDetail(int purchaseReceivalDetailId)
         {
             using (var db = GetContext())
             {
                 PurchaseReceivalDetailModel podm = (from pod in db.PurchaseReceivalDetails
-                                                 where pod.Id == purchaseReceivalDetailId
-                                                 select new PurchaseReceivalDetailModel
-                                                 {
-                                                     Id = pod.Id,
-                                                     PurchaseReceivalId = pod.PurchaseReceivalId,
-                                                     Code = pod.Code,
-                                                     Quantity = pod.Quantity,
-                                                     ItemId = pod.ItemId,
-                                                     PurchaseOrderDetailId = pod.PurchaseOrderDetailId,
-                                                     IsConfirmed = pod.IsConfirmed,
-                                                     IsDeleted = pod.IsDeleted,
-                                                     CreatedAt = pod.CreatedAt,
-                                                     UpdatedAt = pod.UpdatedAt,
-                                                     DeletedAt = pod.DeletedAt
-                                                 }).FirstOrDefault();
+                                                     where pod.Id == purchaseReceivalDetailId && !pod.IsDeleted
+                                                     select new PurchaseReceivalDetailModel
+                                                     {
+                                                         Id = pod.Id,
+                                                         PurchaseReceivalId = pod.PurchaseReceivalId,
+                                                         Code = pod.Code,
+                                                         Quantity = pod.Quantity,
+                                                         ItemId = pod.ItemId,
+                                                         PurchaseOrderDetailId = pod.PurchaseOrderDetailId,
+                                                         IsConfirmed = pod.IsConfirmed,
+                                                         IsDeleted = pod.IsDeleted,
+                                                         CreatedAt = pod.CreatedAt,
+                                                         UpdatedAt = pod.UpdatedAt,
+                                                         DeletedAt = pod.DeletedAt
+                                                     }).FirstOrDefault();
 
                 return podm;
             }
         }
 
         /// <summary>
-        /// Create a new purchaseReceivalDetail order detail.
+        /// Get purchase receival detail from Database.
+        /// </summary>
+        /// <param name="purchaseOrderDetailId">Id of the purchase order detail</param>
+        /// <returns>A purchase receival detail</returns>
+        public List<PurchaseReceivalDetailModel> GetPurchaseReceivalDetailByPurchaseOrderDetail(int purchaseOrderDetailId)
+        {
+            using (var db = GetContext())
+            {
+                 IQueryable<PurchaseReceivalDetailModel> podm = (from pod in db.PurchaseReceivalDetails
+                                                                where !pod.IsDeleted && pod.PurchaseOrderDetailId == purchaseOrderDetailId
+                                                                select new PurchaseReceivalDetailModel
+                                                                {
+                                                                    Id = pod.Id,
+                                                                    PurchaseReceivalId = pod.PurchaseReceivalId,
+                                                                    Code = pod.Code,
+                                                                    Quantity = pod.Quantity,
+                                                                    ItemId = pod.ItemId,
+                                                                    PurchaseOrderDetailId = pod.PurchaseOrderDetailId,
+                                                                    IsConfirmed = pod.IsConfirmed,
+                                                                    IsDeleted = pod.IsDeleted,
+                                                                    CreatedAt = pod.CreatedAt,
+                                                                    UpdatedAt = pod.UpdatedAt,
+                                                                    DeletedAt = pod.DeletedAt
+                                                                }).AsQueryable();
+
+                return podm.ToList();
+            }
+        }
+        /*
+         * CREATE DETAIL
+         */
+
+        /// <summary>
+        /// Create a new purchase receival detail.
         /// </summary>
         /// <param name="purchaseReceivalDetail">An object PurchaseReceivalDetail</param>
-        /// <returns>The new purchaseReceivalDetail order detail</returns>
+        /// <returns>The new purchase receival detail</returns>
         public PurchaseReceivalDetail CreatePurchaseReceivalDetail(PurchaseReceivalDetail purchaseReceivalDetail)
         {
 
@@ -239,15 +298,21 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * DELETE DETAIL
+         */
+
         /// <summary>
-        /// Delete a certain purchaseReceivalDetail order detail
+        /// Delete a certain purchase receival detail
         /// </summary>
-        /// <param name="purchaseReceivalDetailId">PurchaseReceivalDetail Id</param>
+        /// <param name="purchaseReceivalDetailId">Id of the purchase receival detail</param>
         public void DeletePurchaseReceivalDetail(int purchaseReceivalDetailId)
         {
             using (var db = GetContext())
             {
-                PurchaseReceivalDetail pod = (from p in db.PurchaseReceivalDetails where p.Id == purchaseReceivalDetailId select p).FirstOrDefault();
+                PurchaseReceivalDetail pod = (from p in db.PurchaseReceivalDetails
+                                              where p.Id == purchaseReceivalDetailId && !p.IsDeleted
+                                              select p).FirstOrDefault();
                 if (pod != null)
                 {
                     pod.IsDeleted = true;
@@ -259,20 +324,24 @@ namespace StockControl.Repository
         }
 
         /// <summary>
-        /// Delete purchaseReceivalDetail order details that connects to the parent PurchaseReceival 
+        /// Delete purchase receival details that connects to the parent purchase receival 
         /// </summary>
-        /// <param name="purchaseReceivalDetailOrderId">Id of the parent PurchaseReceival</param>
-        public void DeletePurchaseReceivalDetailByPurchaseReceivalId(int purchaseReceivalDetailOrderId)
+        /// <param name="purchaseReceivalDetailOrderId">Id of the parent purchase receival</param>
+        public void DeletePurchaseReceivalDetailByPurchaseReceivalId(int purchaseReceivalId)
         {
             using (var db = GetContext())
             {
-                List<PurchaseReceivalDetail> pod = (from p in db.PurchaseReceivalDetails where p.PurchaseReceivalId == purchaseReceivalDetailOrderId select p).ToList();
+                List<PurchaseReceivalDetail> pod = (from p in db.PurchaseReceivalDetails
+                                                    where p.PurchaseReceivalId == purchaseReceivalId && !p.IsDeleted
+                                                    select p).ToList();
 
                 if (pod != null)
                 {
                     foreach (var eachdetail in pod)
                     {
-                        var updatedod = (from p in db.PurchaseReceivalDetails where p.Id == eachdetail.Id select p).FirstOrDefault();
+                        var updatedod = (from p in db.PurchaseReceivalDetails
+                                         where p.Id == eachdetail.Id && !p.IsDeleted
+                                         select p).FirstOrDefault();
                         if (updatedod != null)
                         {
                             updatedod.IsDeleted = true;
@@ -285,16 +354,22 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * UPDATE DETAIL
+         */
+
         /// <summary>
-        /// Update a purchaseReceivalDetail order detail.
+        /// Update a purchase receival detail.
         /// </summary>
         /// <param name="purchaseReceivalDetail">An object PurchaseReceivalDetail</param>
-        /// <returns>The updated purchaseReceivalDetail order detail</returns>
+        /// <returns>The updated purchase receival detail</returns>
         public PurchaseReceivalDetail UpdatePurchaseReceivalDetail(PurchaseReceivalDetail purchaseReceivalDetail)
         {
             using (var db = GetContext())
             {
-                PurchaseReceivalDetail pod = (from d in db.PurchaseReceivalDetails where d.Id == purchaseReceivalDetail.Id select d).FirstOrDefault();
+                PurchaseReceivalDetail pod = (from d in db.PurchaseReceivalDetails
+                                              where d.Id == purchaseReceivalDetail.Id && !d.IsDeleted
+                                              select d).FirstOrDefault();
                 if (pod != null)
                 {
                     pod.Id = purchaseReceivalDetail.Id;
@@ -312,6 +387,38 @@ namespace StockControl.Repository
                     db.SaveChanges();
                 }
                 return pod;
+            }
+        }
+
+        /// <summary>
+        /// Update confirmation of all purchase receival details that connects to the parent PurchaseReceival 
+        /// </summary>
+        /// <param name="purchaseReceivalId">Id of the parent purchase receival</param>
+        /// <param name="IsConfirmed">Setter for the Confirm / Unconfirm parameter</param>
+        public void UpdateConfirmationPurchaseReceivalDetailByPurchaseReceivalId(int purchaseReceivalId, bool IsConfirmed)
+        {
+            using (var db = GetContext())
+            {
+                List<PurchaseReceivalDetail> dod = (from d in db.PurchaseReceivalDetails
+                                              where d.PurchaseReceivalId == purchaseReceivalId && !d.IsDeleted
+                                              select d).ToList();
+
+                if (dod != null)
+                {
+                    foreach (var eachdetail in dod)
+                    {
+                        var updatedod = (from d in db.PurchaseReceivalDetails
+                                         where d.Id == eachdetail.Id && !d.IsDeleted
+                                         select d).FirstOrDefault();
+                        if (updatedod != null)
+                        {
+                            updatedod.IsConfirmed = IsConfirmed;
+                            updatedod.UpdatedAt = DateTime.Now;
+
+                            db.SaveChanges();
+                        }
+                    }
+                }
             }
         }
     }

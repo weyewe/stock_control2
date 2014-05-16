@@ -9,6 +9,11 @@ namespace StockControl.Repository
 {
     public class ItemRepository : EfRepository<Item>, IItemRepository
     {
+
+        /*
+         * GET
+         */
+
         /// <summary>
         /// Get all items from Database.
         /// </summary>
@@ -18,7 +23,7 @@ namespace StockControl.Repository
              using (var db = GetContext())
             {
                 IQueryable<ItemModel> im = (from i in db.Items
-                                            where i.IsDeleted == false
+                                            where !i.IsDeleted
                                                select new ItemModel
                                                {
                                                    Id = i.Id,
@@ -47,7 +52,7 @@ namespace StockControl.Repository
             using (var db = GetContext())
             {
                 ItemModel im = (from i in db.Items
-                                            where i.IsDeleted == false && i.Id == Id
+                                            where !i.IsDeleted && i.Id == Id
                                             select new ItemModel
                                             {
                                                 Id = i.Id,
@@ -66,6 +71,20 @@ namespace StockControl.Repository
             }
         }
 
+        /// <summary>
+        /// Get one duplicate Stock keeping unit.
+        /// </summary>
+        /// <param name="item">Item to be checked with the database</param>
+        /// <returns>Duplicated Sku</returns>
+        public Item GetDuplicateSku(ItemModel item)
+        {
+            Item i = Find(x => x.Sku == item.Sku && !x.IsDeleted && x.Id != item.Id);
+            return i;
+        }
+
+        /*
+         * CREATE
+         */
         /// <summary>
         /// Create a new item.
         /// </summary>
@@ -87,13 +106,16 @@ namespace StockControl.Repository
             return Create(newitem);
         }
 
+        /* 
+         * DELETE
+         */
         /// <summary>
         /// Delete a certain item
         /// </summary>
         /// <param name="id">Item Id</param>
         public void DeleteItem(int id)
         {
-            Item i = Find(x => x.Id == id);
+            Item i = Find(x => x.Id == id && !x.IsDeleted);
             if (i != null)
             {
                 i.IsDeleted = true;
@@ -102,6 +124,10 @@ namespace StockControl.Repository
             }
         }
 
+        /*
+         * UPDATE
+         */
+
         /// <summary>
         /// Update a item.
         /// </summary>
@@ -109,7 +135,7 @@ namespace StockControl.Repository
         /// <returns>The updated item</returns>
         public Item UpdateItem(Item item)
         {
-            Item i = Find(x => x.Id == item.Id);
+            Item i = Find(x => x.Id == item.Id && !x.IsDeleted);
             if (i != null)
             {
                 i.Id = item.Id;
@@ -128,17 +154,5 @@ namespace StockControl.Repository
             }
             return i;
         }
-
-        /// <summary>
-        /// Find one duplicate Stock keeping unit.
-        /// </summary>
-        /// <param name="item">Item to be checked with the database</param>
-        /// <returns>Duplicated Sku</returns>
-        public Item getDuplicateSku(ItemModel item)
-        {
-            Item i = Find(x => x.Sku == item.Sku && !x.IsDeleted && x.Id != item.Id);
-            return i;
-        }
-
     }
 }

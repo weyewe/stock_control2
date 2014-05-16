@@ -32,7 +32,7 @@ namespace StockControl.Service
         // DeliveryOrderDetail.count != 0
         bool ValidateConfirmDeliveryOrder(DeliveryOrderModel deliveryOrder, IDeliveryOrderRepository _deliveryOrderRepository, out string message);
         // Can't unconfirm if item.ready < 0
-        bool ValidateUnconfirmDeliveryOrder(DeliveryOrderModel deliveryOrder, out string message);
+        bool ValidateUnconfirmDeliveryOrder(DeliveryOrderModel deliveryOrder, IDeliveryOrderRepository _deliveryOrderRepository, out string message);
 
         /// <summary>
         /// Delivery Order Detail -- Children
@@ -61,7 +61,7 @@ namespace StockControl.Service
         bool ValidateDeleteDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, out string message);
         // Can't unconfirm if associate item.pendingReceival will be changed to < 0 after unconfirm
         // Can't unconfirm if quantity of item.ready will be changed to < 0 after unconfirm
-        bool ValidateUnconfirmDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, IItemRepository _itemRepository, out string message);
+        bool ValidateConfirmDeliveryOrderDetail(DeliveryOrderDetailModel deliveryOrderDetail, IItemRepository _itemRepository, out string message);
 
 
     }

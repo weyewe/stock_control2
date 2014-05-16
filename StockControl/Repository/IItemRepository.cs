@@ -11,9 +11,9 @@ namespace StockControl.Repository
 
         List<ItemModel> GetItemList();
         ItemModel GetItem(int id);
+        Item GetDuplicateSku(ItemModel item);
         Item CreateItem(Item item);
         void DeleteItem(int id);
         Item UpdateItem(Item item);
-        Item getDuplicateSku(ItemModel item);
     }
 }

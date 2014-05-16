@@ -10,6 +10,7 @@ namespace StockControl.Repository
     {
 
         List<ContactModel> GetContactList();
+        List<ContactModel> GetDeletedList();
         ContactModel GetContact(int Id);
         Contact CreateContact(Contact contact);
         void DeleteContact(int id);

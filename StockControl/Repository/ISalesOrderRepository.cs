@@ -22,6 +22,7 @@ namespace StockControl.Repository
         void DeleteSalesOrderDetail(int SalesOrderDetailId);
         void DeleteSalesOrderDetailBySalesOrderId(int SalesOrderId);
         SalesOrderDetail UpdateSalesOrderDetail(SalesOrderDetail SalesOrderDetail);
+        void UpdateConfirmationSalesOrderDetailBySalesOrderId(int salesOrderId, bool IsConfirmed);
 
     }
 }
